@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Surigao City — Travel Progress</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,700;1,300;1,700&family=DM+Sans:wght@300;400;500;600&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<style>
+  :root {
+    --ocean: #0a3d62;
+    --sky: #1e88e5;
+    --coral: #ff6b4a;
+    --gold: #f4c430;
+    --sand: #fdf6e3;
+    --foam: #e8f4f8;
+    --mint: #43c6ac;
+    --text: #1a1a2e;
+    --muted: #6b7a8d;
+    --white: #ffffff;
+    --shadow: 0 8px 32px rgba(10,61,98,0.12);
+    --radius: 18px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #f5efe3;
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── PAPER TEXTURE BG ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image:
+      radial-gradient(ellipse 90% 60% at 15% 10%, rgba(30,136,229,0.10) 0%, transparent 55%),
+      radial-gradient(ellipse 70% 50% at 85% 90%, rgba(67,198,172,0.10) 0%, transparent 55%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+  }
+
+  /* ── CONNECTING STATE ── */
+  .connecting {
+    position: fixed; inset: 0; z-index: 999;
+    background: var(--ocean);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    color: white; gap: 18px;
+    transition: opacity 0.6s ease;
+  }
+  .connecting.hidden { opacity: 0; pointer-events: none; }
+  .connecting-logo { font-size: 3rem; animation: bob 1.8s ease-in-out infinite; }
+  @keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+  .connecting h2 {
+    font-family: 'Fraunces', serif; font-size: 1.8rem; font-weight: 300;
+    letter-spacing: 1px;
+  }
+  .connecting p { font-size: 13px; opacity: 0.6; }
+  .spinner {
+    width: 36px; height: 36px;
+    border: 3px solid rgba(255,255,255,0.2);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── HEADER ── */
+  header {
+    position: relative; z-index: 10;
+    background: linear-gradient(135deg, #0a3d62 0%, #145a86 55%, #1e88e5 100%);
+    overflow: hidden;
+  }
+  .header-inner {
+    max-width: 960px; margin: 0 auto;
+    padding: 52px 28px 42px;
+    position: relative;
+  }
+  /* Decorative postcard lines */
+  .header-lines {
+    position: absolute; right: 0; top: 0; bottom: 0;
+    width: 260px; opacity: 0.08;
+    background: repeating-linear-gradient(
+      0deg, transparent, transparent 28px,
+      white 28px, white 30px
+    );
+  }
+  .header-stamp {
+    position: absolute; right: 36px; top: 36px;
+    width: 80px; height: 80px;
+    border: 3px solid rgba(244,196,48,0.5);
+    border-radius: 4px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    background: rgba(244,196,48,0.08);
+  }
+  .stamp-emoji { font-size: 2rem; }
+  .stamp-label {
+    font-size: 8px; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; color: rgba(244,196,48,0.7);
+    margin-top: 2px;
+  }
+  .live-badge {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: rgba(67,198,172,0.2);
+    border: 1px solid rgba(67,198,172,0.4);
+    color: #43c6ac;
+    font-size: 11px; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 5px 14px; border-radius: 30px;
+    margin-bottom: 20px;
+  }
+  .live-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: #43c6ac;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)} }
+  header h1 {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(2rem, 6vw, 3.6rem);
+    color: white; font-weight: 300;
+    line-height: 1.1; margin-bottom: 8px;
+  }
+  header h1 em { color: var(--gold); font-style: italic; font-weight: 700; }
+  .header-caption {
+    font-family: 'Caveat', cursive;
+    font-size: 1.2rem;
+    color: rgba(255,255,255,0.65);
+    margin-bottom: 32px;
+  }
+
+  /* ── HERO PROGRESS ── */
+  .hero-progress {
+    display: flex; gap: 16px; flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+  .hp-stat {
+    background: rgba(255,255,255,0.10);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 14px;
+    padding: 14px 22px; color: white;
+    min-width: 100px;
+  }
+  .hp-num {
+    font-family: 'Fraunces', serif;
+    font-size: 2.2rem; font-weight: 700; line-height: 1;
+    display: block;
+  }
+  .hp-label { font-size: 11px; opacity: 0.65; text-transform: uppercase; letter-spacing: 1.5px; margin-top: 2px; }
+  .hp-bar-wrap {
+    flex: 1; min-width: 180px;
+    background: rgba(255,255,255,0.10);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 14px;
+    padding: 14px 22px; color: white;
+    display: flex; flex-direction: column; justify-content: center; gap: 10px;
+  }
+  .hp-bar-label { font-size: 12px; opacity: 0.75; display: flex; justify-content: space-between; }
+  .hp-bar-outer {
+    background: rgba(255,255,255,0.18);
+    border-radius: 30px; height: 8px; overflow: hidden;
+  }
+  .hp-bar-inner {
+    height: 100%; border-radius: 30px;
+    background: linear-gradient(90deg, #43c6ac, var(--gold));
+    transition: width 1.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .hp-pct {
+    font-family: 'Fraunces', serif;
+    font-size: 1.5rem; font-weight: 700;
+  }
+
+  /* ── MAIN ── */
+  main {
+    position: relative; z-index: 5;
+    max-width: 960px; margin: 0 auto;
+    padding: 36px 20px 80px;
+  }
+
+  /* ── SECTION HEADINGS ── */
+  .section-head {
+    display: flex; align-items: baseline; gap: 12px;
+    margin-bottom: 20px; margin-top: 42px;
+  }
+  .section-head:first-child { margin-top: 0; }
+  .section-title {
+    font-family: 'Fraunces', serif;
+    font-size: 1.6rem; font-weight: 700;
+    color: var(--ocean);
+  }
+  .section-count {
+    font-size: 13px; color: var(--muted);
+    background: rgba(10,61,98,0.07);
+    padding: 2px 10px; border-radius: 20px;
+  }
+
+  /* ── SPOT CARDS ── */
+  .spots-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+  .spot-card {
+    background: rgba(255,255,255,0.88);
+    backdrop-filter: blur(8px);
+    border-radius: var(--radius);
+    border: 1.5px solid rgba(255,255,255,0.9);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    transition: transform 0.22s ease, box-shadow 0.22s ease;
+    position: relative;
+    animation: fadeUp 0.4s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(22px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .spot-card:hover { transform: translateY(-3px); box-shadow: 0 14px 38px rgba(10,61,98,0.16); }
+
+  /* Visited glow */
+  .spot-card.is-visited {
+    background: linear-gradient(145deg, rgba(212,245,226,0.95) 0%, rgba(195,242,215,0.92) 100%);
+    border-color: rgba(46,170,106,0.45);
+    box-shadow: 0 8px 28px rgba(46,170,106,0.14);
+  }
+  .spot-card.is-visited .card-name { color: #1a6b43; }
+  .spot-card.is-visited .card-desc { color: #3a7a56; }
+
+  /* Not visited */
+  .spot-card.is-unvisited { opacity: 0.88; }
+
+  .card-inner { padding: 18px 20px 20px; }
+  .card-row1 {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: 10px;
+  }
+  .card-emoji { font-size: 2.6rem; line-height: 1; }
+  .card-badges { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
+  .badge-visited {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: #2eaa6a; color: white;
+    font-size: 10px; font-weight: 700; letter-spacing: 1px;
+    padding: 4px 10px; border-radius: 20px;
+    text-transform: uppercase;
+  }
+  .badge-todo {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: rgba(10,61,98,0.07); color: var(--muted);
+    font-size: 10px; font-weight: 600; letter-spacing: 1px;
+    padding: 4px 10px; border-radius: 20px;
+    text-transform: uppercase;
+  }
+  .badge-fav {
+    background: rgba(232,62,74,0.12); color: #e83e4a;
+    font-size: 10px; font-weight: 700;
+    padding: 3px 10px; border-radius: 20px;
+  }
+  .badge-stop {
+    background: rgba(10,61,98,0.08); color: var(--ocean);
+    font-size: 10px; font-weight: 700;
+    padding: 3px 10px; border-radius: 20px;
+  }
+  .badge-stop.top { background: rgba(244,196,48,0.18); color: #b8860b; }
+  .card-name {
+    font-family: 'Fraunces', serif;
+    font-size: 1.15rem; font-weight: 700;
+    color: var(--ocean); margin-bottom: 6px;
+  }
+  .card-desc {
+    font-size: 12.5px; color: var(--muted);
+    line-height: 1.6; margin-bottom: 12px;
+  }
+  .card-tag {
+    display: inline-block;
+    background: var(--foam); color: var(--sky);
+    font-size: 11px; font-weight: 600;
+    padding: 3px 10px; border-radius: 20px;
+    letter-spacing: 0.4px;
+  }
+
+  /* ── VISITED CHECK LINE ── */
+  .card-check-bar {
+    height: 4px;
+    background: rgba(10,61,98,0.06);
+    border-radius: 0 0 18px 18px;
+    overflow: hidden;
+  }
+  .spot-card.is-visited .card-check-bar {
+    background: linear-gradient(90deg, #43c6ac, #2eaa6a);
+  }
+
+  /* ── PRIORITY SECTION ── */
+  .priority-list { display: flex; flex-direction: column; gap: 10px; }
+  .priority-row {
+    background: rgba(255,255,255,0.88);
+    border-radius: 14px;
+    border: 1.5px solid rgba(255,255,255,0.9);
+    box-shadow: 0 4px 16px rgba(10,61,98,0.07);
+    padding: 14px 18px;
+    display: flex; align-items: center; gap: 14px;
+    animation: fadeUp 0.35s ease both;
+    transition: transform 0.18s;
+  }
+  .priority-row:hover { transform: translateX(3px); }
+  .priority-row.is-visited {
+    background: linear-gradient(135deg, rgba(212,245,226,0.9) 0%, rgba(195,242,215,0.88) 100%);
+    border-color: rgba(46,170,106,0.3);
+  }
+  .rank-circle {
+    width: 38px; height: 38px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 14px; flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  }
+  .rank-1 { background: linear-gradient(135deg, #ffd700, #ffaa00); color: white; }
+  .rank-2 { background: linear-gradient(135deg, #d4d4d4, #aaa); color: white; }
+  .rank-3 { background: linear-gradient(135deg, #d4936a, #b87048); color: white; }
+  .rank-n  { background: var(--foam); color: var(--muted); }
+  .rank-done { background: linear-gradient(135deg, #43c6ac, #2eaa6a); color: white; }
+  .pr-emoji { font-size: 1.5rem; flex-shrink: 0; }
+  .pr-info { flex: 1; }
+  .pr-name {
+    font-family: 'Fraunces', serif;
+    font-size: 0.98rem; font-weight: 700;
+    color: var(--ocean); display: block; margin-bottom: 1px;
+  }
+  .priority-row.is-visited .pr-name { color: #1a6b43; }
+  .pr-meta { font-size: 11.5px; color: var(--muted); }
+  .pr-status {
+    font-size: 11px; font-weight: 700;
+    padding: 3px 10px; border-radius: 20px;
+    flex-shrink: 0;
+  }
+  .pr-status.done { background: rgba(46,170,106,0.15); color: #1a7a45; }
+  .pr-status.todo { background: rgba(10,61,98,0.08); color: var(--muted); }
+
+  /* ── MAP ── */
+  .map-card {
+    background: rgba(255,255,255,0.9);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border: 1.5px solid rgba(255,255,255,0.9);
+    overflow: hidden;
+  }
+  .map-top { padding: 20px 24px 0; }
+  .map-top h3 {
+    font-family: 'Fraunces', serif;
+    color: var(--ocean); font-size: 1.3rem; font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .map-top p { font-size: 13px; color: var(--muted); margin-bottom: 14px; }
+  #viewer-map { width: 100%; height: 480px; }
+  .map-legend {
+    padding: 14px 24px;
+    display: flex; gap: 18px; flex-wrap: wrap;
+    border-top: 1px solid rgba(10,61,98,0.07);
+    font-size: 12px; color: var(--muted);
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-dot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
+  .map-chips {
+    padding: 14px 24px 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 8px;
+    border-top: 1px solid rgba(10,61,98,0.06);
+  }
+  .map-chip {
+    display: flex; align-items: center; gap: 9px;
+    background: var(--foam); border-radius: 10px;
+    padding: 9px 13px;
+    font-size: 12.5px; color: var(--ocean); font-weight: 500;
+    border: 1px solid rgba(10,61,98,0.08);
+    cursor: pointer; transition: background 0.14s;
+  }
+  .map-chip:hover { background: #d0eaf5; }
+  .map-chip.chip-done { background: #d4f5e2; border-color: rgba(46,170,106,0.25); color: #1a6b43; }
+  .chip-rank {
+    margin-left: auto;
+    background: var(--ocean); color: white;
+    font-size: 9px; font-weight: 700;
+    width: 18px; height: 18px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .chip-rank.done { background: #2eaa6a; }
+
+  /* ── MARKER STYLES ── */
+  .spot-marker { display: flex; flex-direction: column; align-items: center; cursor: pointer; }
+  .marker-bubble {
+    background: white; border: 3px solid var(--ocean);
+    border-radius: 50% 50% 50% 0; transform: rotate(-45deg);
+    width: 44px; height: 44px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 14px rgba(10,61,98,0.3); position: relative;
+  }
+  .marker-bubble.visited { background: #d4f5e2; border-color: #2eaa6a; }
+  .marker-emoji { transform: rotate(45deg); font-size: 18px; line-height: 1; }
+  .marker-check {
+    position: absolute; bottom: -4px; right: -4px;
+    background: #2eaa6a; color: white; border-radius: 50%;
+    width: 18px; height: 18px; font-size: 10px;
+    display: flex; align-items: center; justify-content: center;
+    transform: rotate(45deg); border: 2px solid white; font-weight: 700;
+  }
+  .marker-num {
+    position: absolute; top: -4px; left: -4px;
+    background: var(--ocean); color: white; border-radius: 50%;
+    width: 18px; height: 18px; font-size: 9px;
+    display: flex; align-items: center; justify-content: center;
+    transform: rotate(45deg); border: 2px solid white; font-weight: 700;
+  }
+  .leaflet-popup-content-wrapper {
+    border-radius: 14px !important;
+    box-shadow: 0 8px 28px rgba(10,61,98,0.18) !important;
+  }
+  .map-popup { font-family: 'DM Sans', sans-serif; min-width: 180px; }
+  .map-popup-emoji { font-size: 1.8rem; margin-bottom: 4px; }
+  .map-popup h4 { font-family: 'Fraunces', serif; color: var(--ocean); font-size: 1rem; margin-bottom: 4px; }
+  .map-popup p { font-size: 12px; color: var(--muted); line-height: 1.5; margin-bottom: 6px; }
+  .map-popup-visited { display: inline-flex; align-items: center; gap: 4px; background: #d4f5e2; color: #1a7a45; font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
+
+  /* ── FOOTER ── */
+  .viewer-footer {
+    text-align: center; padding: 48px 20px 32px;
+    font-family: 'Caveat', cursive;
+    font-size: 1.1rem; color: var(--muted);
+    position: relative; z-index: 5;
+  }
+  .viewer-footer span { color: var(--coral); }
+
+  /* ── ERROR STATE ── */
+  .error-state {
+    text-align: center; padding: 80px 20px;
+    color: var(--muted);
+  }
+  .error-state .error-icon { font-size: 3rem; margin-bottom: 14px; }
+  .error-state h3 { font-family: 'Fraunces', serif; color: var(--ocean); margin-bottom: 8px; }
+  .error-state p { font-size: 13px; line-height: 1.7; }
+  .error-state code { background: rgba(10,61,98,0.08); padding: 2px 6px; border-radius: 4px; font-size: 12px; }
+
+  @media (max-width: 520px) {
+    .spots-grid { grid-template-columns: 1fr; }
+    .hero-progress { flex-direction: column; }
+    .hp-bar-wrap { min-width: auto; }
+  }
+</style>
+</head>
+<body>
+
+<!-- CONNECTING SCREEN -->
+<div class="connecting" id="connecting-screen">
+  <div class="connecting-logo">🌊</div>
+  <h2>Loading Surigao Planner…</h2>
+  <p>Fetching live data from Firebase</p>
+  <div class="spinner"></div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="header-inner">
+    <div class="header-lines"></div>
+    <div class="header-stamp">
+      <div class="stamp-emoji">🌊</div>
+      <div class="stamp-label">Surigao</div>
+    </div>
+    <div class="live-badge">
+      <span class="live-dot"></span>
+      Live Progress
+    </div>
+    <h1>Surigao City<br><em>Tour Tracker</em></h1>
+    <p class="header-caption">Watching the adventure unfold in real-time ✨</p>
+    <div class="hero-progress" id="hero-progress">
+      <div class="hp-stat">
+        <span class="hp-num" id="stat-visited">0</span>
+        <span class="hp-label">Visited</span>
+      </div>
+      <div class="hp-stat">
+        <span class="hp-num" id="stat-total">0</span>
+        <span class="hp-label">Total Spots</span>
+      </div>
+      <div class="hp-stat">
+        <span class="hp-num" id="stat-favs">0</span>
+        <span class="hp-label">Favorites</span>
+      </div>
+      <div class="hp-bar-wrap">
+        <div class="hp-bar-label">
+          <span>Overall Progress</span>
+          <span class="hp-pct" id="stat-pct">0%</span>
+        </div>
+        <div class="hp-bar-outer">
+          <div class="hp-bar-inner" id="stat-bar" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main id="main-content">
+  <div class="error-state" id="error-state" style="display:none">
+    <div class="error-icon">🔌</div>
+    <h3>No Data Yet</h3>
+    <p>
+      Make sure the Firebase Realtime Database is set up correctly and the<br>
+      planner has synced at least once.<br><br>
+      Check that <code>databaseURL</code> in the config is correct.
+    </p>
+  </div>
+
+  <!-- SPOTS BY PRIORITY -->
+  <div id="spots-section" style="display:none">
+    <div class="section-head">
+      <span class="section-title">📍 All Spots</span>
+      <span class="section-count" id="spots-count-label">0 spots</span>
+    </div>
+    <div class="spots-grid" id="spots-grid"></div>
+  </div><br>
+
+  <!-- MAP -->
+  <div id="map-section" style="display:none">
+    <div class="section-head">
+      <span class="section-title">🗺️ Route Map</span>
+    </div>
+    <div class="map-card">
+      <div class="map-top">
+        <h3>Live Surigao Map</h3>
+        <p>Green pins = visited ✅ · Numbers = priority order · Click a pin to see details</p>
+      </div>
+      <div id="viewer-map"></div>
+      <div class="map-legend">
+        <span style="font-weight:600;color:var(--ocean)">Legend:</span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--ocean)"></span> To Visit</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#2eaa6a"></span> Visited ✅</span>
+        <span class="legend-item"><span style="font-size:11px">— — —</span> Route</span>
+      </div>
+      <div class="map-chips" id="map-chips"></div>
+    </div>
+  </div><br>
+
+  <!-- PRIORITY ORDER -->
+  <div id="priority-section" style="display:none">
+    <div class="section-head">
+      <span class="section-title">⭐ Priority Order</span>
+    </div>
+    <div class="priority-list" id="priority-list"></div>
+  </div>
+
+</main>
+
+<footer class="viewer-footer">
+  Made with <span>♥</span> for Surigao City adventures · Updates live as the planner syncs
+</footer>
+
+<!-- ═══ FIREBASE ═══════════════════════════════════════════════ -->
+<!-- 🔴 REPLACE THIS CONFIG WITH YOUR OWN FIREBASE CONFIG BELOW 🔴 -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyAX57nI4NOu6jUHUFjPJfEMcMy879wQmYo",
+  authDomain: "surigao-planner.firebaseapp.com",
+  databaseURL: "https://surigao-planner-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "surigao-planner",
+  storageBucket: "surigao-planner.firebasestorage.app",
+  messagingSenderId: "782725848439",
+  appId: "1:782725848439:web:54e373188428ba3ab89572",
+  measurementId: "G-LEB7J7ZTFG"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+</script>
+<!-- ════════════════════════════════════════════════════════════ -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+// ─── STATE ───────────────────────────────────────────────────
+let spots = [], checked = {}, favorites = {}, starred = {}, priorityOrder = [];
+let viewerMap = null, mapMarkers = {}, routeLines = [];
+let firstLoad = true;
+
+// ─── FIREBASE LISTENER ────────────────────────────────────────
+db.ref('surigao_planner').on('value', snapshot => {
+  const data = snapshot.val();
+  if (!data) {
+    document.getElementById('error-state').style.display = 'block';
+    hideConnecting();
+    return;
+  }
+  spots        = data.spots        || [];
+  checked      = data.checked      || {};
+  favorites    = data.favorites    || {};
+  starred      = data.starred      || {};
+  priorityOrder= data.priorityOrder|| spots.map(s=>s.id);
+
+  // Ensure all spot ids are in priorityOrder
+  spots.forEach(s => { if (!priorityOrder.includes(s.id)) priorityOrder.push(s.id); });
+
+  renderAll();
+  hideConnecting();
+  document.getElementById('spots-section').style.display = 'block';
+  document.getElementById('priority-section').style.display = 'block';
+  document.getElementById('map-section').style.display = 'block';
+  document.getElementById('error-state').style.display = 'none';
+});
+
+function hideConnecting() {
+  const el = document.getElementById('connecting-screen');
+  el.classList.add('hidden');
+  setTimeout(() => el.style.display = 'none', 650);
+}
+
+// ─── RENDER ALL ───────────────────────────────────────────────
+function renderAll() {
+  updateStats();
+  renderGrid();
+  renderPriority();
+  renderMap();
+}
+
+// ─── STATS ────────────────────────────────────────────────────
+function updateStats() {
+  const total   = spots.length;
+  const visited = spots.filter(s => checked[s.id]).length;
+  const favs    = spots.filter(s => favorites[s.id]).length;
+  const pct     = total ? Math.round(visited / total * 100) : 0;
+
+  document.getElementById('stat-visited').textContent = visited;
+  document.getElementById('stat-total').textContent   = total;
+  document.getElementById('stat-favs').textContent    = favs;
+  document.getElementById('stat-pct').textContent     = pct + '%';
+  document.getElementById('stat-bar').style.width     = pct + '%';
+}
+
+// ─── SPOTS GRID ───────────────────────────────────────────────
+function renderGrid() {
+  const grid = document.getElementById('spots-grid');
+  document.getElementById('spots-count-label').textContent = spots.length + ' spots';
+
+  const ordered = priorityOrder
+    .map(id => spots.find(s => s.id === id))
+    .filter(Boolean);
+
+  grid.innerHTML = ordered.map((s, i) => {
+    const isV   = !!checked[s.id];
+    const isFav = !!favorites[s.id];
+    const isStar= !!starred[s.id];
+    const stopLabel = i === 0 ? '🥇 #1' : i === 1 ? '🥈 #2' : i === 2 ? '🥉 #3' : `#${i+1}`;
+    const isTop = i < 3;
+    return `
+    <div class="spot-card ${isV ? 'is-visited' : 'is-unvisited'}" style="animation-delay:${i*0.04}s">
+      <div class="card-inner">
+        <div class="card-row1">
+          <div class="card-emoji">${s.emoji}</div>
+          <div class="card-badges">
+            ${isV
+              ? `<span class="badge-visited">✅ Visited</span>`
+              : `<span class="badge-todo">🔲 To Visit</span>`
+            }
+            ${isFav ? `<span class="badge-fav">❤️ Favorite</span>` : ''}
+            <span class="badge-stop${isTop?' top':''}">${stopLabel}</span>
+          </div>
+        </div>
+        <div class="card-name">${s.name}</div>
+        <div class="card-desc">${s.desc}</div>
+        <span class="card-tag">${s.tag}</span>
+      </div>
+      <div class="card-check-bar"></div>
+    </div>`;
+  }).join('');
+}
+
+// ─── PRIORITY LIST ────────────────────────────────────────────
+function renderPriority() {
+  const list = document.getElementById('priority-list');
+  const ordered = priorityOrder
+    .map(id => spots.find(s => s.id === id))
+    .filter(Boolean);
+
+  list.innerHTML = ordered.map((s, i) => {
+    const isV = !!checked[s.id];
+    const rankClass = isV ? 'rank-done' : i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'rank-n';
+    return `
+    <div class="priority-row${isV?' is-visited':''}" style="animation-delay:${i*0.03}s">
+      <div class="rank-circle ${rankClass}">${isV ? '✓' : i+1}</div>
+      <div class="pr-emoji">${s.emoji}</div>
+      <div class="pr-info">
+        <strong class="pr-name">${s.name}${starred[s.id]?' ⭐':''}</strong>
+        <span class="pr-meta">${s.tag}</span>
+      </div>
+      <span class="pr-status ${isV?'done':'todo'}">${isV ? '✅ Done' : '🔲 Pending'}</span>
+    </div>`;
+  }).join('');
+}
+
+// ─── MAP ──────────────────────────────────────────────────────
+function renderMap() {
+  if (!viewerMap) {
+    viewerMap = L.map('viewer-map').setView([9.7868, 125.4944], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>',
+      maxZoom: 19
+    }).addTo(viewerMap);
+  }
+
+  Object.values(mapMarkers).forEach(m => viewerMap.removeLayer(m));
+  mapMarkers = {};
+  routeLines.forEach(l => viewerMap.removeLayer(l));
+  routeLines = [];
+
+  const ordered = priorityOrder
+    .map(id => spots.find(s => s.id === id))
+    .filter(s => s && s.lat && s.lng);
+
+  if (!ordered.length) return;
+
+  // Route lines
+  for (let i = 0; i < ordered.length - 1; i++) {
+    const a = ordered[i], b = ordered[i+1];
+    const bothV = checked[a.id] && checked[b.id];
+    const aV    = checked[a.id];
+    const line = L.polyline([[a.lat, a.lng], [b.lat, b.lng]], {
+      color: bothV ? '#2eaa6a' : aV ? '#f4c430' : '#0a3d62',
+      weight: bothV ? 4 : 3,
+      opacity: bothV ? 0.9 : 0.4,
+      dashArray: bothV ? null : '8,8'
+    }).addTo(viewerMap);
+    routeLines.push(line);
+  }
+
+  // Markers
+  ordered.forEach((s, i) => {
+    const isV = !!checked[s.id];
+    const icon = L.divIcon({
+      className: '',
+      html: `<div class="spot-marker">
+        <div class="marker-bubble${isV?' visited':''}">
+          <span class="marker-emoji">${s.emoji}</span>
+          ${isV
+            ? `<div class="marker-check">✓</div>`
+            : `<div class="marker-num">${i+1}</div>`
+          }
+        </div>
+      </div>`,
+      iconSize: [44, 52], iconAnchor: [22, 52], popupAnchor: [0, -54]
+    });
+
+    const marker = L.marker([s.lat, s.lng], { icon })
+      .addTo(viewerMap)
+      .bindPopup(`
+        <div class="map-popup">
+          <div class="map-popup-emoji">${s.emoji}</div>
+          <h4>${s.name}</h4>
+          <p>#${i+1} · ${s.tag}<br>${s.desc.substring(0,100)}${s.desc.length>100?'…':''}</p>
+          ${isV ? '<div class="map-popup-visited">✅ Already visited!</div>' : ''}
+        </div>
+      `, { maxWidth: 240 });
+    mapMarkers[s.id] = marker;
+  });
+
+  // Chips
+  const chipsEl = document.getElementById('map-chips');
+  chipsEl.innerHTML = ordered.map((s, i) => {
+    const isV = !!checked[s.id];
+    return `<div class="map-chip${isV?' chip-done':''}" onclick="zoomTo('${s.id}')">
+      <span>${s.emoji}</span>
+      <span>${s.name}</span>
+      <span class="chip-rank${isV?' done':''}">${i+1}</span>
+    </div>`;
+  }).join('');
+
+  const latlngs = ordered.map(s => [s.lat, s.lng]);
+  viewerMap.fitBounds(L.latLngBounds(latlngs).pad(0.2));
+  setTimeout(() => viewerMap.invalidateSize(), 120);
+}
+
+function zoomTo(id) {
+  const s = spots.find(x => x.id === id);
+  if (!s || !s.lat) return;
+  viewerMap.setView([s.lat, s.lng], 16, { animate: true });
+  if (mapMarkers[id]) mapMarkers[id].openPopup();
+}
+</script>
+</body>
+</html>
