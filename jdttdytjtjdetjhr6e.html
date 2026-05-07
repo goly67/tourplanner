@@ -1900,6 +1900,8 @@
   </div>
 
   <script>
+    // Spots are loaded from Firebase / local storage. No hard-coded defaults.
+
     // ─── STATE ───────────────────────────────────────────────────
     let spots = [];
     let checked = {};
@@ -1921,22 +1923,9 @@
 
     function loadState() {
       try {
-        // Always use fresh DEFAULT_SPOTS to get corrected coordinates
-        const saved = JSON.parse(localStorage.getItem('sg_spots'));
-        if (saved) {
-          // Merge saved user data (checked, stars) with corrected coordinates
-          spots = DEFAULT_SPOTS.map(def => {
-            const s = saved.find(x => x.id === def.id);
-            // Keep the corrected lat/lng from DEFAULT_SPOTS; preserve user edits to name/desc/tag/emoji
-            return s ? { ...def, name: s.name, desc: s.desc, tag: s.tag, emoji: s.emoji } : def;
-          });
-          // Add any custom user-added spots that aren't in DEFAULT_SPOTS
-          saved.forEach(s => {
-            if (!DEFAULT_SPOTS.find(d => d.id === s.id)) spots.push(s);
-          });
-        } else {
-          spots = JSON.parse(JSON.stringify(DEFAULT_SPOTS));
-        }
+        // Load saved spots from local storage.
+        const saved = JSON.parse(localStorage.getItem('sg_spots')) || [];
+        spots = Array.isArray(saved) ? saved : [];
         checked = JSON.parse(localStorage.getItem('sg_checked')) || {};
         stars = JSON.parse(localStorage.getItem('sg_stars')) || {};
         priorityOrder = JSON.parse(localStorage.getItem('sg_priority')) || spots.map(s => s.id);
@@ -1945,7 +1934,7 @@
         fees = JSON.parse(localStorage.getItem('sg_fees')) || [];
         feeAnnouncement = localStorage.getItem('sg_feeAnnouncement') || '';
       } catch (e) {
-        spots = JSON.parse(JSON.stringify(DEFAULT_SPOTS));
+        spots = [];
         checked = {}; stars = {};
         priorityOrder = spots.map(s => s.id);
         schedule = []; fees = [];
