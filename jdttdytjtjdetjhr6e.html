@@ -996,13 +996,13 @@
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div class="form-group">
-        <label>Duration (minutes)</label>
+        <label>Duration (Hours)</label>
         <input type="number" id="ev-duration" value="60" min="15" step="15">
       </div>
       <div class="form-group">
         <label>Event Type</label>
         <select id="ev-type">
-          <option value="visit">🗺️ Site Visit</option>
+          <option value="visit">🎥 Site Recording</option>
           <option value="hotel">🏨 Hotel / Stay</option>
           <option value="leisure">🌅 Leisure</option>
           <option value="transport">🚌 Transport</option>
@@ -1590,7 +1590,7 @@ function showToast(msg) {
 
 // ─── SCHEDULE ────────────────────────────────────────────────
 const TYPE_COLORS = { visit:'dot-visit', hotel:'dot-hotel', leisure:'dot-leisure', transport:'dot-transport', meal:'dot-meal', other:'dot-other' };
-const TYPE_LABELS = { visit:'🗺️ Site Visit', hotel:'🏨 Hotel', leisure:'🌅 Leisure', transport:'🚌 Transport', meal:'🍜 Meal', other:'📌 Other' };
+const TYPE_LABELS = { visit:'🎥 Site Recording', hotel:'🏨 Hotel', leisure:'🌅 Leisure', transport:'🚌 Transport', meal:'🍜 Meal', other:'📌 Other' };
 
 function renderSchedule() {
   renderCalendar();
