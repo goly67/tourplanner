@@ -555,6 +555,240 @@
     .header-stats { gap: 12px; }
     .modal { padding: 24px; }
   }
+
+  /* ─── SCHEDULE CALENDAR ─────────────────────────────────────── */
+  .cal-wrap {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border: 1.5px solid rgba(255,255,255,0.8);
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+  .cal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 24px;
+    background: linear-gradient(135deg, var(--ocean), var(--sky));
+    color: white;
+  }
+  .cal-header h3 { font-family: 'Playfair Display', serif; font-size: 1.3rem; }
+  .cal-nav-btn {
+    background: rgba(255,255,255,0.15); border: none; color: white;
+    width: 36px; height: 36px; border-radius: 50%; cursor: pointer;
+    font-size: 18px; display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+  }
+  .cal-nav-btn:hover { background: rgba(255,255,255,0.3); }
+  .cal-grid {
+    display: grid; grid-template-columns: repeat(7,1fr);
+    padding: 16px;
+  }
+  .cal-day-label {
+    text-align: center; font-size: 11px; font-weight: 700;
+    color: var(--muted); text-transform: uppercase; letter-spacing: 1px;
+    padding: 6px 0;
+  }
+  .cal-cell {
+    min-height: 58px; padding: 4px;
+    border-radius: 10px; margin: 2px;
+    cursor: pointer; position: relative;
+    transition: background 0.12s;
+  }
+  .cal-cell:hover { background: var(--foam); }
+  .cal-cell.today { background: rgba(30,136,229,0.12); }
+  .cal-cell.selected { background: rgba(255,107,74,0.15); box-shadow: 0 0 0 2px var(--coral); }
+  .cal-cell.other-month .cal-date { color: #ccc; }
+  .cal-date {
+    font-size: 13px; font-weight: 600; color: var(--ocean);
+    margin-bottom: 3px; text-align: center;
+  }
+  .cal-cell.today .cal-date {
+    background: var(--sky); color: white;
+    width: 24px; height: 24px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 3px;
+    font-size: 12px;
+  }
+  .cal-dots { display: flex; gap: 3px; justify-content: center; flex-wrap: wrap; }
+  .cal-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .dot-visit { background: var(--sky); }
+  .dot-hotel { background: var(--coral); }
+  .dot-leisure { background: var(--mint); }
+  .dot-transport { background: var(--gold); }
+  .dot-meal { background: #e67e22; }
+  .dot-other { background: var(--muted); }
+
+  .cal-selected-day {
+    padding: 0 16px 16px;
+    border-top: 1px solid rgba(10,61,98,0.07);
+  }
+  .cal-selected-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.05rem; color: var(--ocean);
+    padding: 14px 0 10px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+
+  .event-list { display: flex; flex-direction: column; gap: 10px; }
+  .event-item {
+    background: white;
+    border-radius: 12px;
+    padding: 14px 16px;
+    border-left: 4px solid var(--sky);
+    box-shadow: 0 2px 10px rgba(10,61,98,0.07);
+    display: flex; align-items: flex-start; gap: 14px;
+    animation: cardIn 0.3s ease both;
+  }
+  .event-item.type-hotel { border-left-color: var(--coral); }
+  .event-item.type-leisure { border-left-color: var(--mint); }
+  .event-item.type-transport { border-left-color: var(--gold); }
+  .event-item.type-meal { border-left-color: #e67e22; }
+  .event-time {
+    font-size: 12px; font-weight: 700; color: var(--ocean);
+    min-width: 48px; padding-top: 1px;
+  }
+  .event-body { flex: 1; }
+  .event-title { font-weight: 600; font-size: 14px; color: var(--text); margin-bottom: 3px; }
+  .event-meta { font-size: 11.5px; color: var(--muted); }
+  .event-notes { font-size: 12px; color: var(--muted); margin-top: 4px; font-style: italic; }
+  .event-actions { display: flex; gap: 4px; }
+  .event-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.5px;
+    padding: 2px 8px; border-radius: 20px;
+    background: var(--foam); color: var(--sky);
+    text-transform: uppercase;
+  }
+
+  .upcoming-list { display: flex; flex-direction: column; gap: 10px; }
+  .upcoming-item {
+    background: var(--card-bg);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    border: 1.5px solid rgba(255,255,255,0.8);
+    padding: 16px 20px;
+    display: flex; gap: 16px; align-items: center;
+    animation: cardIn 0.3s ease both;
+  }
+  .upcoming-date-box {
+    min-width: 54px; text-align: center;
+    background: var(--ocean); color: white;
+    border-radius: 10px; padding: 8px;
+  }
+  .upcoming-month { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.8; }
+  .upcoming-day { font-family: 'Playfair Display', serif; font-size: 1.8rem; line-height: 1; }
+  .upcoming-info { flex: 1; }
+  .upcoming-title { font-weight: 600; font-size: 14.5px; color: var(--text); margin-bottom: 3px; }
+  .upcoming-meta { font-size: 12px; color: var(--muted); }
+
+  /* ─── FEE MONITORING ────────────────────────────────────────── */
+  .fee-summary {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 14px; margin-bottom: 24px;
+  }
+  .fee-stat-card {
+    background: var(--card-bg);
+    border-radius: 14px;
+    padding: 18px 20px;
+    box-shadow: var(--shadow);
+    border: 1.5px solid rgba(255,255,255,0.8);
+    text-align: center;
+  }
+  .fee-stat-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem; font-weight: 900;
+    color: var(--ocean); display: block;
+  }
+  .fee-stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .fee-stat-card.outstanding .fee-stat-num { color: var(--coral); }
+  .fee-stat-card.paid .fee-stat-num { color: var(--mint); }
+
+  .fee-entry {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border: 1.5px solid rgba(255,255,255,0.8);
+    margin-bottom: 18px;
+    overflow: hidden;
+    animation: cardIn 0.35s ease both;
+  }
+  .fee-entry-header {
+    display: flex; align-items: center; gap: 14px;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, rgba(10,61,98,0.04) 0%, transparent 100%);
+    border-bottom: 1px solid rgba(10,61,98,0.07);
+  }
+  .fee-entry-emoji { font-size: 2rem; }
+  .fee-entry-info { flex: 1; }
+  .fee-entry-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem; color: var(--ocean); margin-bottom: 2px;
+  }
+  .fee-entry-meta { font-size: 12px; color: var(--muted); }
+  .fee-amount {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem; font-weight: 900; color: var(--ocean);
+    white-space: nowrap;
+  }
+  .fee-entry-actions { display: flex; gap: 6px; }
+
+  .payer-list { padding: 14px 20px; display: flex; flex-direction: column; gap: 8px; }
+  .payer-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px;
+    background: white; border-radius: 10px;
+    border: 1.5px solid rgba(10,61,98,0.08);
+    transition: all 0.18s;
+  }
+  .payer-row.paid { background: rgba(67,198,140,0.08); border-color: rgba(67,198,140,0.3); }
+  .payer-avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: var(--ocean); color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; flex-shrink: 0;
+  }
+  .payer-row.paid .payer-avatar { background: var(--mint); }
+  .payer-name { flex: 1; font-weight: 600; font-size: 13.5px; color: var(--text); }
+  .payer-status {
+    font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px;
+    letter-spacing: 0.5px; cursor: pointer; transition: all 0.15s;
+    border: none;
+  }
+  .payer-status.paid { background: rgba(67,198,140,0.15); color: #1a7a45; }
+  .payer-status.unpaid { background: rgba(255,107,74,0.12); color: var(--coral); }
+  .payer-actions { display: flex; gap: 4px; }
+  .payer-paid-date { font-size: 10px; color: var(--muted); }
+
+  .fee-add-payer {
+    padding: 0 20px 14px;
+    display: flex; gap: 8px; align-items: center;
+  }
+  .fee-add-payer input {
+    flex: 1; border: 1.5px solid rgba(10,61,98,0.15);
+    border-radius: 8px; padding: 8px 12px;
+    font-family: 'DM Sans', sans-serif; font-size: 13px;
+    outline: none; background: white; color: var(--text);
+  }
+  .fee-add-payer input:focus { border-color: var(--sky); }
+
+  .fee-progress {
+    padding: 0 20px 16px;
+  }
+  .fee-prog-bar-outer {
+    background: var(--foam); border-radius: 30px; height: 8px; overflow: hidden;
+  }
+  .fee-prog-bar-inner {
+    background: linear-gradient(90deg, var(--mint), var(--sky));
+    height: 100%; border-radius: 30px;
+    transition: width 0.5s ease;
+  }
+  .fee-prog-label {
+    display: flex; justify-content: space-between;
+    font-size: 11.5px; color: var(--muted); margin-top: 5px;
+  }
 </style>
 </head>
 <body>
@@ -588,6 +822,8 @@
     <button class="tab-btn" onclick="switchTab('priority', this)">⭐ Priority Order</button>
     <button class="tab-btn" onclick="switchTab('favorites', this)">❤️ Favorites</button>
     <button class="tab-btn" onclick="switchTab('map', this)">📍 Map</button>
+    <button class="tab-btn" onclick="switchTab('schedule', this)">📅 Schedule</button>
+    <button class="tab-btn" onclick="switchTab('fees', this)">💰 Fees</button>
   </div>
 </header>
 
@@ -645,6 +881,45 @@
     </div>
   </div>
 
+  <!-- ── SCHEDULE TAB ──────────────────────────────────────────── -->
+  <div class="tab-content" id="tab-schedule">
+    <div class="toolbar">
+      <span class="toolbar-title">📅 Schedule & Calendar</span>
+      <button class="btn btn-primary" onclick="openEventModal()">＋ Add Event</button>
+    </div>
+
+    <!-- Calendar widget -->
+    <div class="cal-wrap">
+      <div class="cal-header">
+        <button class="cal-nav-btn" onclick="calNav(-1)">‹</button>
+        <h3 id="cal-month-label">Month Year</h3>
+        <button class="cal-nav-btn" onclick="calNav(1)">›</button>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+      <div class="cal-selected-day" id="cal-selected-day"></div>
+    </div>
+
+    <!-- Upcoming events -->
+    <div class="toolbar" style="margin-top:8px">
+      <span class="toolbar-title" style="font-size:1.1rem">🗓 Upcoming Events</span>
+    </div>
+    <div class="upcoming-list" id="upcoming-list"></div>
+  </div>
+
+  <!-- ── FEES TAB ──────────────────────────────────────────────── -->
+  <div class="tab-content" id="tab-fees">
+    <div class="toolbar">
+      <span class="toolbar-title">💰 Fee Monitoring</span>
+      <button class="btn btn-primary" onclick="openFeeModal()">＋ Add Fee Entry</button>
+    </div>
+
+    <!-- Summary stats -->
+    <div class="fee-summary" id="fee-summary"></div>
+
+    <!-- Fee entries list -->
+    <div id="fee-entries-list"></div>
+  </div>
+
 </main>
 
 <div class="modal-overlay" id="modal" onclick="handleModalClick(event)">
@@ -700,6 +975,96 @@
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- ── EVENT MODAL ──────────────────────────────────────────────── -->
+<div class="modal-overlay" id="event-modal" onclick="if(event.target===this)closeEventModal()">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:520px">
+    <h3 id="event-modal-title">＋ Add Event</h3>
+    <div class="form-group">
+      <label>Event Title</label>
+      <input type="text" id="ev-title" placeholder="e.g. Visit Mabua Beach">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group">
+        <label>Date</label>
+        <input type="date" id="ev-date">
+      </div>
+      <div class="form-group">
+        <label>Time</label>
+        <input type="time" id="ev-time" value="08:00">
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group">
+        <label>Duration (minutes)</label>
+        <input type="number" id="ev-duration" value="60" min="15" step="15">
+      </div>
+      <div class="form-group">
+        <label>Event Type</label>
+        <select id="ev-type">
+          <option value="visit">🗺️ Site Visit</option>
+          <option value="hotel">🏨 Hotel / Stay</option>
+          <option value="leisure">🌅 Leisure</option>
+          <option value="transport">🚌 Transport</option>
+          <option value="meal">🍜 Meal</option>
+          <option value="other">📌 Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Linked Spot (optional)</label>
+      <select id="ev-spot">
+        <option value="">— None —</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Notes</label>
+      <textarea id="ev-notes" placeholder="Reminders, tips, directions..."></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeEventModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEvent()">Save Event</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── FEE MODAL ────────────────────────────────────────────────── -->
+<div class="modal-overlay" id="fee-modal" onclick="if(event.target===this)closeFeeModal()">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:520px">
+    <h3 id="fee-modal-title">＋ Add Fee Entry</h3>
+    <div class="form-group">
+      <label>Fee Name / Description</label>
+      <input type="text" id="fee-name" placeholder="e.g. Silop Cave Entrance Fee">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group">
+        <label>Amount per Person (₱)</label>
+        <input type="number" id="fee-amount" value="0" min="0" step="50">
+      </div>
+      <div class="form-group">
+        <label>Category</label>
+        <select id="fee-category">
+          <option value="entrance">🎟 Entrance Fee</option>
+          <option value="hotel">🏨 Hotel / Accommodation</option>
+          <option value="transport">🚌 Transport</option>
+          <option value="guide">👤 Guide Fee</option>
+          <option value="meal">🍜 Food & Drinks</option>
+          <option value="other">📌 Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Linked Spot (optional)</label>
+      <select id="fee-spot">
+        <option value="">— None —</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeFeeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveFeeEntry()">Save Fee</button>
+    </div>
+  </div>
+</div>
 
 <script>
 // ─── CORRECTED COORDINATES (verified via Google Maps / Google Places API) ───
@@ -781,6 +1146,15 @@ let priorityOrder = [];
 let editingId = null;
 let activeFilter = 'all';
 let selectedEmoji = '🏖️';
+// Schedule
+let schedule = [];
+let editingEventId = null;
+let calYear = new Date().getFullYear();
+let calMonth = new Date().getMonth();
+let calSelectedDate = null;
+// Fees
+let fees = [];
+let editingFeeId = null;
 
 function loadState() {
   try {
@@ -805,10 +1179,13 @@ function loadState() {
     starred = JSON.parse(localStorage.getItem('sg_starred')) || {};
     priorityOrder = JSON.parse(localStorage.getItem('sg_priority')) || spots.map(s=>s.id);
     spots.forEach(s => { if (!priorityOrder.includes(s.id)) priorityOrder.push(s.id); });
+    schedule = JSON.parse(localStorage.getItem('sg_schedule')) || [];
+    fees = JSON.parse(localStorage.getItem('sg_fees')) || [];
   } catch(e) {
     spots = JSON.parse(JSON.stringify(DEFAULT_SPOTS));
     checked = {}; favorites = {}; starred = {};
     priorityOrder = spots.map(s=>s.id);
+    schedule = []; fees = [];
   }
 }
 
@@ -818,6 +1195,8 @@ function saveState() {
   localStorage.setItem('sg_favorites', JSON.stringify(favorites));
   localStorage.setItem('sg_starred', JSON.stringify(starred));
   localStorage.setItem('sg_priority', JSON.stringify(priorityOrder));
+  localStorage.setItem('sg_schedule', JSON.stringify(schedule));
+  localStorage.setItem('sg_fees', JSON.stringify(fees));
   // ── Sync to Firebase (non-blocking) ──
   syncToFirebase();
 }
@@ -831,6 +1210,8 @@ function syncToFirebase() {
       favorites,
       starred,
       priorityOrder,
+      schedule,
+      fees,
       lastUpdated: Date.now()
     });
   } catch(e) {
@@ -896,6 +1277,8 @@ function renderAll() {
   renderFavorites();
   renderMapList();
   if (leafletMap) renderMap();
+  renderSchedule();
+  renderFees();
 }
 
 function renderGrid() {
@@ -1185,6 +1568,7 @@ function switchTab(name, btn) {
       leafletMap.invalidateSize();
     }, 80);
   }
+  if (name === 'schedule') renderCalendar();
 }
 
 // ─── FILTER ───────────────────────────────────────────────────
@@ -1202,6 +1586,409 @@ function showToast(msg) {
   t.classList.add('show');
   clearTimeout(t._timer);
   t._timer = setTimeout(()=>t.classList.remove('show'), 2600);
+}
+
+// ─── SCHEDULE ────────────────────────────────────────────────
+const TYPE_COLORS = { visit:'dot-visit', hotel:'dot-hotel', leisure:'dot-leisure', transport:'dot-transport', meal:'dot-meal', other:'dot-other' };
+const TYPE_LABELS = { visit:'🗺️ Site Visit', hotel:'🏨 Hotel', leisure:'🌅 Leisure', transport:'🚌 Transport', meal:'🍜 Meal', other:'📌 Other' };
+
+function renderSchedule() {
+  renderCalendar();
+  renderUpcoming();
+}
+
+function renderCalendar() {
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  document.getElementById('cal-month-label').textContent = months[calMonth] + ' ' + calYear;
+
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  const daysInPrev = new Date(calYear, calMonth, 0).getDate();
+  const today = new Date();
+
+  let html = days.map(d=>`<div class="cal-day-label">${d}</div>`).join('');
+
+  // Event lookup by date
+  const evByDate = {};
+  schedule.forEach(ev => { (evByDate[ev.date] = evByDate[ev.date]||[]).push(ev); });
+
+  // Previous month cells
+  for (let i = 0; i < firstDay; i++) {
+    const d = daysInPrev - firstDay + i + 1;
+    const dateStr = `${calYear}-${String(calMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    html += `<div class="cal-cell other-month" onclick="selectCalDate('${dateStr}')">
+      <div class="cal-date">${d}</div></div>`;
+  }
+
+  // Current month cells
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday = today.getFullYear()===calYear && today.getMonth()===calMonth && today.getDate()===d;
+    const isSelected = calSelectedDate === dateStr;
+    const evs = evByDate[dateStr] || [];
+    const dots = evs.map(ev=>`<span class="cal-dot ${TYPE_COLORS[ev.type]||'dot-other'}"></span>`).join('');
+    html += `<div class="cal-cell${isToday?' today':''}${isSelected?' selected':''}" onclick="selectCalDate('${dateStr}')">
+      <div class="cal-date">${d}</div>
+      <div class="cal-dots">${dots}</div>
+    </div>`;
+  }
+
+  // Next month fill
+  const total = firstDay + daysInMonth;
+  const remainder = total % 7 === 0 ? 0 : 7 - (total % 7);
+  for (let d = 1; d <= remainder; d++) {
+    const m = calMonth+2 > 12 ? 1 : calMonth+2;
+    const y = calMonth+2 > 12 ? calYear+1 : calYear;
+    const dateStr = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    html += `<div class="cal-cell other-month" onclick="selectCalDate('${dateStr}')">
+      <div class="cal-date">${d}</div></div>`;
+  }
+
+  document.getElementById('cal-grid').innerHTML = html;
+  renderSelectedDay();
+}
+
+function selectCalDate(dateStr) {
+  calSelectedDate = calSelectedDate === dateStr ? null : dateStr;
+  renderCalendar();
+}
+
+function renderSelectedDay() {
+  const el = document.getElementById('cal-selected-day');
+  if (!calSelectedDate) { el.innerHTML = ''; return; }
+  const evs = schedule.filter(ev=>ev.date===calSelectedDate).sort((a,b)=>a.time.localeCompare(b.time));
+  const d = new Date(calSelectedDate+'T00:00:00');
+  const label = d.toLocaleDateString('en-PH',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  const evHtml = evs.length ? evs.map(ev=>renderEventItem(ev)).join('') :
+    '<p style="font-size:13px;color:var(--muted);padding:12px 0">No events on this day. Click ＋ Add Event to schedule one.</p>';
+  el.innerHTML = `
+    <div class="cal-selected-title">
+      <span>📅 ${label}</span>
+      <button class="btn btn-primary" style="font-size:12px;padding:7px 14px" onclick="openEventModal(null,'${calSelectedDate}')">＋ Add</button>
+    </div>
+    <div class="event-list">${evHtml}</div>`;
+}
+
+function renderEventItem(ev) {
+  const spot = spots.find(s=>s.id===ev.spotId);
+  const dur = ev.duration ? `${ev.duration} min` : '';
+  return `<div class="event-item type-${ev.type||'other'}">
+    <div class="event-time">${ev.time||''}</div>
+    <div class="event-body">
+      <div class="event-title">${ev.title}</div>
+      <div class="event-meta">
+        ${spot?`${spot.emoji} ${spot.name} · `:''}${TYPE_LABELS[ev.type]||'Other'}${dur?' · '+dur:''}
+      </div>
+      ${ev.notes?`<div class="event-notes">💬 ${ev.notes}</div>`:''}
+    </div>
+    <div class="event-actions">
+      <button class="icon-btn" title="Edit" onclick="openEventModal('${ev.id}')">✏️</button>
+      <button class="icon-btn" title="Delete" onclick="deleteEvent('${ev.id}')">🗑</button>
+    </div>
+  </div>`;
+}
+
+function renderUpcoming() {
+  const today = new Date().toISOString().slice(0,10);
+  const upcoming = schedule
+    .filter(ev=>ev.date>=today)
+    .sort((a,b)=>a.date.localeCompare(b.date)||a.time.localeCompare(b.time))
+    .slice(0,10);
+
+  const el = document.getElementById('upcoming-list');
+  if (!upcoming.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">📅</div><h4>No upcoming events</h4><p>Add events to your schedule above</p></div>`;
+    return;
+  }
+  el.innerHTML = upcoming.map(ev => {
+    const spot = spots.find(s=>s.id===ev.spotId);
+    const d = new Date(ev.date+'T00:00:00');
+    const month = d.toLocaleDateString('en',{month:'short'}).toUpperCase();
+    const day = d.getDate();
+    return `<div class="upcoming-item">
+      <div class="upcoming-date-box">
+        <div class="upcoming-month">${month}</div>
+        <div class="upcoming-day">${day}</div>
+      </div>
+      <div class="upcoming-info">
+        <div class="upcoming-title">${ev.title}</div>
+        <div class="upcoming-meta">${ev.time} · ${TYPE_LABELS[ev.type]||''}${spot?' · '+spot.emoji+' '+spot.name:''}</div>
+        ${ev.notes?`<div style="font-size:11.5px;color:var(--muted);margin-top:3px;font-style:italic">💬 ${ev.notes}</div>`:''}
+      </div>
+      <div class="event-actions">
+        <button class="icon-btn" title="Edit" onclick="openEventModal('${ev.id}')">✏️</button>
+        <button class="icon-btn" title="Delete" onclick="deleteEvent('${ev.id}')">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function calNav(dir) {
+  calMonth += dir;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  renderCalendar();
+}
+
+// Event Modal
+function openEventModal(id=null, prefillDate=null) {
+  editingEventId = id;
+  // Populate spot dropdown
+  const sel = document.getElementById('ev-spot');
+  sel.innerHTML = '<option value="">— None —</option>' + spots.map(s=>`<option value="${s.id}">${s.emoji} ${s.name}</option>`).join('');
+
+  if (id) {
+    const ev = schedule.find(e=>e.id===id);
+    document.getElementById('event-modal-title').textContent = '✏️ Edit Event';
+    document.getElementById('ev-title').value = ev.title;
+    document.getElementById('ev-date').value = ev.date;
+    document.getElementById('ev-time').value = ev.time;
+    document.getElementById('ev-duration').value = ev.duration;
+    document.getElementById('ev-type').value = ev.type||'visit';
+    document.getElementById('ev-spot').value = ev.spotId||'';
+    document.getElementById('ev-notes').value = ev.notes||'';
+  } else {
+    document.getElementById('event-modal-title').textContent = '＋ Add Event';
+    document.getElementById('ev-title').value='';
+    document.getElementById('ev-date').value = prefillDate || new Date().toISOString().slice(0,10);
+    document.getElementById('ev-time').value='08:00';
+    document.getElementById('ev-duration').value='60';
+    document.getElementById('ev-type').value='visit';
+    document.getElementById('ev-spot').value='';
+    document.getElementById('ev-notes').value='';
+  }
+  document.getElementById('event-modal').classList.add('open');
+}
+
+function closeEventModal() { document.getElementById('event-modal').classList.remove('open'); }
+
+function saveEvent() {
+  const title = document.getElementById('ev-title').value.trim();
+  const date  = document.getElementById('ev-date').value;
+  const time  = document.getElementById('ev-time').value;
+  if (!title) { showToast('⚠️ Please enter an event title'); return; }
+  if (!date)  { showToast('⚠️ Please pick a date'); return; }
+  const ev = {
+    title,
+    date,
+    time,
+    duration: parseInt(document.getElementById('ev-duration').value)||60,
+    type: document.getElementById('ev-type').value,
+    spotId: document.getElementById('ev-spot').value||null,
+    notes: document.getElementById('ev-notes').value.trim()
+  };
+  if (editingEventId) {
+    const idx = schedule.findIndex(e=>e.id===editingEventId);
+    schedule[idx] = { ...schedule[idx], ...ev };
+  } else {
+    ev.id = 'ev'+Date.now();
+    schedule.push(ev);
+  }
+  saveState();
+  renderSchedule();
+  calSelectedDate = date;
+  renderCalendar();
+  closeEventModal();
+  showToast('📅 Event saved!');
+}
+
+function deleteEvent(id) {
+  if (!confirm('Remove this event?')) return;
+  schedule = schedule.filter(e=>e.id!==id);
+  saveState();
+  renderSchedule();
+  renderCalendar();
+  showToast('🗑 Event removed');
+}
+
+// ─── FEES ────────────────────────────────────────────────────
+const FEE_CAT_ICONS = { entrance:'🎟', hotel:'🏨', transport:'🚌', guide:'👤', meal:'🍜', other:'📌' };
+
+function renderFees() {
+  // Summary stats
+  let totalAmt=0, totalPaid=0, totalPayers=0, paidPayers=0;
+  fees.forEach(f=>{
+    (f.payers||[]).forEach(p=>{
+      totalPayers++;
+      totalAmt += f.amount||0;
+      if (p.paid) { paidPayers++; totalPaid += f.amount||0; }
+    });
+  });
+  const outstanding = totalAmt - totalPaid;
+
+  document.getElementById('fee-summary').innerHTML = `
+    <div class="fee-stat-card">
+      <span class="fee-stat-num">₱${totalAmt.toLocaleString()}</span>
+      <span class="fee-stat-label">Total Fees</span>
+    </div>
+    <div class="fee-stat-card paid">
+      <span class="fee-stat-num">₱${totalPaid.toLocaleString()}</span>
+      <span class="fee-stat-label">Collected</span>
+    </div>
+    <div class="fee-stat-card outstanding">
+      <span class="fee-stat-num">₱${outstanding.toLocaleString()}</span>
+      <span class="fee-stat-label">Outstanding</span>
+    </div>
+    <div class="fee-stat-card">
+      <span class="fee-stat-num">${paidPayers}/${totalPayers}</span>
+      <span class="fee-stat-label">Payers Done</span>
+    </div>`;
+
+  const el = document.getElementById('fee-entries-list');
+  if (!fees.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">💰</div><h4>No fee entries yet</h4><p>Add fees for hotels, entrances, guides, etc.</p></div>`;
+    return;
+  }
+
+  el.innerHTML = fees.map(f=>{
+    const spot = spots.find(s=>s.id===f.spotId);
+    const payers = f.payers||[];
+    const paidCount = payers.filter(p=>p.paid).length;
+    const pct = payers.length ? Math.round(paidCount/payers.length*100) : 0;
+    const catIcon = FEE_CAT_ICONS[f.category]||'📌';
+
+    const payerRows = payers.map(p=>`
+      <div class="payer-row${p.paid?' paid':''}" id="prow-${p.id}">
+        <div class="payer-avatar">${(p.name||'?')[0].toUpperCase()}</div>
+        <div>
+          <div class="payer-name">${p.name}</div>
+          ${p.paid&&p.paidAt?`<div class="payer-paid-date">Paid ${new Date(p.paidAt).toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'})}</div>`:''}
+        </div>
+        <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
+          <button class="payer-status ${p.paid?'paid':'unpaid'}" onclick="togglePayerPaid('${f.id}','${p.id}')">
+            ${p.paid?'✅ Paid':'⏳ Unpaid'}
+          </button>
+          <button class="icon-btn" title="Edit name" onclick="editPayerName('${f.id}','${p.id}')">✏️</button>
+          <button class="icon-btn" title="Remove" onclick="removePayer('${f.id}','${p.id}')">🗑</button>
+        </div>
+      </div>`).join('');
+
+    return `<div class="fee-entry" id="fee-${f.id}">
+      <div class="fee-entry-header">
+        <div class="fee-entry-emoji">${catIcon}</div>
+        <div class="fee-entry-info">
+          <div class="fee-entry-name">${f.name}</div>
+          <div class="fee-entry-meta">${spot?spot.emoji+' '+spot.name+' · ':''}<strong>₱${(f.amount||0).toLocaleString()}/person</strong> · ${paidCount}/${payers.length} paid</div>
+        </div>
+        <div class="fee-amount">₱${((f.amount||0)*paidCount).toLocaleString()}</div>
+        <div class="fee-entry-actions">
+          <button class="icon-btn" title="Edit fee" onclick="openFeeModal('${f.id}')">✏️</button>
+          <button class="icon-btn" title="Delete" onclick="deleteFeeEntry('${f.id}')">🗑</button>
+        </div>
+      </div>
+      <div class="fee-progress">
+        <div class="fee-prog-bar-outer"><div class="fee-prog-bar-inner" style="width:${pct}%"></div></div>
+        <div class="fee-prog-label"><span>${paidCount} of ${payers.length} paid</span><span>${pct}%</span></div>
+      </div>
+      <div class="payer-list">${payerRows||'<p style="font-size:13px;color:var(--muted)">No payers yet. Add one below.</p>'}</div>
+      <div class="fee-add-payer">
+        <input type="text" id="new-payer-${f.id}" placeholder="Payer name (e.g. Juan)" onkeydown="if(event.key==='Enter')addPayer('${f.id}')">
+        <button class="btn btn-outline" style="white-space:nowrap" onclick="addPayer('${f.id}')">＋ Add Payer</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// Fee Modal
+function openFeeModal(id=null) {
+  editingFeeId = id;
+  const sel = document.getElementById('fee-spot');
+  sel.innerHTML = '<option value="">— None —</option>' + spots.map(s=>`<option value="${s.id}">${s.emoji} ${s.name}</option>`).join('');
+
+  if (id) {
+    const f = fees.find(x=>x.id===id);
+    document.getElementById('fee-modal-title').textContent = '✏️ Edit Fee';
+    document.getElementById('fee-name').value = f.name;
+    document.getElementById('fee-amount').value = f.amount||0;
+    document.getElementById('fee-category').value = f.category||'entrance';
+    document.getElementById('fee-spot').value = f.spotId||'';
+  } else {
+    document.getElementById('fee-modal-title').textContent = '＋ Add Fee Entry';
+    document.getElementById('fee-name').value='';
+    document.getElementById('fee-amount').value=0;
+    document.getElementById('fee-category').value='entrance';
+    document.getElementById('fee-spot').value='';
+  }
+  document.getElementById('fee-modal').classList.add('open');
+}
+
+function closeFeeModal() { document.getElementById('fee-modal').classList.remove('open'); }
+
+function saveFeeEntry() {
+  const name = document.getElementById('fee-name').value.trim();
+  if (!name) { showToast('⚠️ Enter a fee name'); return; }
+  const entry = {
+    name,
+    amount: parseFloat(document.getElementById('fee-amount').value)||0,
+    category: document.getElementById('fee-category').value,
+    spotId: document.getElementById('fee-spot').value||null
+  };
+  if (editingFeeId) {
+    const idx = fees.findIndex(x=>x.id===editingFeeId);
+    fees[idx] = { ...fees[idx], ...entry };
+  } else {
+    entry.id = 'fee'+Date.now();
+    entry.payers = [];
+    fees.push(entry);
+  }
+  saveState();
+  renderFees();
+  closeFeeModal();
+  showToast('💰 Fee saved!');
+}
+
+function deleteFeeEntry(id) {
+  if (!confirm('Delete this fee entry and all its payer data?')) return;
+  fees = fees.filter(f=>f.id!==id);
+  saveState();
+  renderFees();
+  showToast('🗑 Fee entry removed');
+}
+
+function addPayer(feeId) {
+  const inp = document.getElementById('new-payer-'+feeId);
+  const name = inp.value.trim();
+  if (!name) { showToast('⚠️ Enter a payer name'); return; }
+  const f = fees.find(x=>x.id===feeId);
+  if (!f.payers) f.payers = [];
+  f.payers.push({ id:'py'+Date.now(), name, paid:false, paidAt:null });
+  inp.value='';
+  saveState();
+  renderFees();
+  showToast('👤 Payer added!');
+}
+
+function togglePayerPaid(feeId, payerId) {
+  const f = fees.find(x=>x.id===feeId);
+  const p = (f.payers||[]).find(x=>x.id===payerId);
+  if (!p) return;
+  p.paid = !p.paid;
+  p.paidAt = p.paid ? Date.now() : null;
+  saveState();
+  renderFees();
+  showToast(p.paid ? '✅ Marked as paid!' : '⏳ Marked as unpaid');
+}
+
+function editPayerName(feeId, payerId) {
+  const f = fees.find(x=>x.id===feeId);
+  const p = (f.payers||[]).find(x=>x.id===payerId);
+  if (!p) return;
+  const newName = prompt('Edit payer name:', p.name);
+  if (!newName || !newName.trim()) return;
+  p.name = newName.trim();
+  saveState();
+  renderFees();
+  showToast('✏️ Name updated!');
+}
+
+function removePayer(feeId, payerId) {
+  if (!confirm('Remove this payer?')) return;
+  const f = fees.find(x=>x.id===feeId);
+  f.payers = (f.payers||[]).filter(p=>p.id!==payerId);
+  saveState();
+  renderFees();
+  showToast('🗑 Payer removed');
 }
 
 // ─── INIT ─────────────────────────────────────────────────────
