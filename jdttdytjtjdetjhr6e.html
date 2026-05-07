@@ -1197,7 +1197,10 @@
       padding: 14px 16px;
       border-left: 4px solid var(--sky);
       box-shadow: 0 2px 10px rgba(10, 61, 98, 0.07);
-      display: block;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 14px;
+      align-items: start;
       animation: cardIn 0.3s ease both;
     }
 
@@ -1249,12 +1252,13 @@
       font-size: 12px;
       font-weight: 700;
       color: var(--ocean);
-      margin-bottom: 8px;
+      line-height: 1.2;
     }
 
     .event-body {
-      display: block;
-      margin-top: 2px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
 
     .event-title {
@@ -1371,43 +1375,6 @@
       margin-bottom: 24px;
     }
 
-    .fee-announcement {
-      background: #fff7e5;
-      border: 1px solid rgba(244,196,48,0.25);
-      color: #5b4d1f;
-      padding: 16px 18px;
-      border-radius: 16px;
-      margin-bottom: 20px;
-      line-height: 1.5;
-      box-shadow: var(--shadow);
-    }
-
-    .fee-card-announcement {
-      background: rgba(255, 247, 229, 0.95);
-      border-left: 4px solid rgba(244,196,48,0.9);
-      color: #5b4d1f;
-      padding: 12px 14px;
-      border-radius: 12px;
-      margin: 14px 0 10px;
-      font-size: 0.95rem;
-      line-height: 1.5;
-    }
-
-    .fee-announcement-editor {
-      margin-bottom: 20px;
-    }
-
-    .fee-announcement-editor textarea {
-      width: 100%;
-      min-height: 72px;
-      border-radius: 12px;
-      border: 1px solid #d4d4d4;
-      padding: 12px;
-      font-size: 14px;
-      margin-top: 8px;
-      resize: vertical;
-      font-family: inherit;
-    }
 
     .fee-summary {
       display: grid;
@@ -1749,10 +1716,7 @@
         <button class="btn btn-primary" onclick="openFeeModal()">＋ Add Fee Entry</button>
       </div>
 
-      <!-- Announcement -->
-      <div class="fee-announcement" id="fee-announcement" style="display:none"></div>
-
-      <!-- Summary stats -->
+        <!-- Summary stats -->
       <div class="fee-summary" id="fee-summary"></div>
 
       <!-- Fee entries list -->
@@ -1907,10 +1871,6 @@
           <option value="">— None —</option>
         </select>
       </div>
-      <div class="form-group">
-        <label>Fee Announcement / Note</label>
-        <textarea id="fee-entry-announcement" placeholder="Optional announcement shown on this fee card"></textarea>
-      </div>
       <div class="modal-footer">
         <button class="btn btn-outline" onclick="closeFeeModal()">Cancel</button>
         <button class="btn btn-primary" onclick="saveFeeEntry()">Save Fee</button>
@@ -1937,7 +1897,6 @@
     let calSelectedDate = null;
     // Fees
     let fees = [];
-    let feeAnnouncement = '';
     let editingFeeId = null;
 
     function loadState() {
@@ -1950,14 +1909,12 @@
         priorityOrder = JSON.parse(localStorage.getItem('sg_priority')) || spots.map(s => s.id);
         spots.forEach(s => { if (!priorityOrder.includes(s.id)) priorityOrder.push(s.id); });
         schedule = (JSON.parse(localStorage.getItem('sg_schedule')) || []).map(ev => ({ ...ev, status: ev.status || 'not_finished' }));
-        fees = JSON.parse(localStorage.getItem('sg_fees')) || [];
-        feeAnnouncement = localStorage.getItem('sg_feeAnnouncement') || '';
+        fees = (JSON.parse(localStorage.getItem('sg_fees')) || []).map(({ announcement, ...rest }) => rest);
       } catch (e) {
         spots = [];
         checked = {}; stars = {};
         priorityOrder = spots.map(s => s.id);
         schedule = []; fees = [];
-        feeAnnouncement = '';
       }
     }
 
@@ -1968,7 +1925,6 @@
       localStorage.setItem('sg_priority', JSON.stringify(priorityOrder));
       localStorage.setItem('sg_schedule', JSON.stringify(schedule));
       localStorage.setItem('sg_fees', JSON.stringify(fees));
-      localStorage.setItem('sg_feeAnnouncement', feeAnnouncement);
       // ── Sync to Firebase (non-blocking) ──
       syncToFirebase();
     }
@@ -1980,7 +1936,6 @@
           spots,
           checked,
           stars,
-          announcement: feeAnnouncement,
           priorityOrder,
           schedule,
           fees,
@@ -2589,12 +2544,6 @@
     const FEE_CAT_ICONS = { entrance: '🎟', hotel: '🏨', transport: '🚌', guide: '👤', meal: '🍜', other: '📌' };
 
     function renderFees() {
-      const annEl = document.getElementById('fee-announcement');
-      if (annEl) {
-        annEl.textContent = feeAnnouncement || '';
-        annEl.style.display = feeAnnouncement ? 'block' : 'none';
-      }
-
       // Summary stats
       let totalAmt = 0, totalPaid = 0, totalPayers = 0, paidPayers = 0;
       fees.forEach(f => {
@@ -2637,7 +2586,6 @@
         const pct = payers.length ? Math.round(paidCount / payers.length * 100) : 0;
         const catIcon = FEE_CAT_ICONS[f.category] || '📌';
 
-        const announcementHtml = f.announcement ? `<div class="fee-card-announcement">${f.announcement.replace(/\n/g,'<br>')}</div>` : '';
         const payerRows = payers.map(p => `
       <div class="payer-row${p.paid ? ' paid' : ''}" id="prow-${p.id}">
         <div class="payer-avatar">${(p.name || '?')[0].toUpperCase()}</div>
@@ -2671,7 +2619,6 @@
         <div class="fee-prog-bar-outer"><div class="fee-prog-bar-inner" style="width:${pct}%"></div></div>
         <div class="fee-prog-label"><span>${paidCount} of ${payers.length} paid</span><span>${pct}%</span></div>
       </div>
-      ${announcementHtml}
       <div class="payer-list">${payerRows || '<p style="font-size:13px;color:var(--muted)">No payers yet. Add one below.</p>'}</div>
       <div class="fee-add-payer">
         <input type="text" id="new-payer-${f.id}" placeholder="Payer name (e.g. Juan)" onkeydown="if(event.key==='Enter')addPayer('${f.id}')">
@@ -2694,14 +2641,12 @@
         document.getElementById('fee-amount').value = f.amount || 0;
         document.getElementById('fee-category').value = f.category || 'entrance';
         document.getElementById('fee-spot').value = f.spotId || '';
-        document.getElementById('fee-entry-announcement').value = f.announcement || '';
       } else {
         document.getElementById('fee-modal-title').textContent = '＋ Add Fee Entry';
         document.getElementById('fee-name').value = '';
         document.getElementById('fee-amount').value = 0;
         document.getElementById('fee-category').value = 'entrance';
         document.getElementById('fee-spot').value = '';
-        document.getElementById('fee-entry-announcement').value = '';
       }
       document.getElementById('fee-modal').classList.add('open');
     }
@@ -2715,8 +2660,7 @@
         name,
         amount: parseFloat(document.getElementById('fee-amount').value) || 0,
         category: document.getElementById('fee-category').value,
-        spotId: document.getElementById('fee-spot').value || null,
-        announcement: document.getElementById('fee-entry-announcement').value.trim() || ''
+        spotId: document.getElementById('fee-spot').value || null
       };
       if (editingFeeId) {
         const idx = fees.findIndex(x => x.id === editingFeeId);
