@@ -1372,6 +1372,17 @@
       box-shadow: var(--shadow);
     }
 
+    .fee-card-announcement {
+      background: rgba(255, 247, 229, 0.95);
+      border-left: 4px solid rgba(244,196,48,0.9);
+      color: #5b4d1f;
+      padding: 12px 14px;
+      border-radius: 12px;
+      margin: 14px 0 10px;
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+
     .fee-announcement-editor {
       margin-bottom: 20px;
     }
@@ -1891,6 +1902,10 @@
         <select id="fee-spot">
           <option value="">— None —</option>
         </select>
+      </div>
+      <div class="form-group">
+        <label>Fee Announcement / Note</label>
+        <textarea id="fee-entry-announcement" placeholder="Optional announcement shown on this fee card"></textarea>
       </div>
       <div class="modal-footer">
         <button class="btn btn-outline" onclick="closeFeeModal()">Cancel</button>
@@ -2626,6 +2641,7 @@
         const pct = payers.length ? Math.round(paidCount / payers.length * 100) : 0;
         const catIcon = FEE_CAT_ICONS[f.category] || '📌';
 
+        const announcementHtml = f.announcement ? `<div class="fee-card-announcement">${f.announcement.replace(/\n/g,'<br>')}</div>` : '';
         const payerRows = payers.map(p => `
       <div class="payer-row${p.paid ? ' paid' : ''}" id="prow-${p.id}">
         <div class="payer-avatar">${(p.name || '?')[0].toUpperCase()}</div>
@@ -2659,6 +2675,7 @@
         <div class="fee-prog-bar-outer"><div class="fee-prog-bar-inner" style="width:${pct}%"></div></div>
         <div class="fee-prog-label"><span>${paidCount} of ${payers.length} paid</span><span>${pct}%</span></div>
       </div>
+      ${announcementHtml}
       <div class="payer-list">${payerRows || '<p style="font-size:13px;color:var(--muted)">No payers yet. Add one below.</p>'}</div>
       <div class="fee-add-payer">
         <input type="text" id="new-payer-${f.id}" placeholder="Payer name (e.g. Juan)" onkeydown="if(event.key==='Enter')addPayer('${f.id}')">
@@ -2681,12 +2698,14 @@
         document.getElementById('fee-amount').value = f.amount || 0;
         document.getElementById('fee-category').value = f.category || 'entrance';
         document.getElementById('fee-spot').value = f.spotId || '';
+        document.getElementById('fee-entry-announcement').value = f.announcement || '';
       } else {
         document.getElementById('fee-modal-title').textContent = '＋ Add Fee Entry';
         document.getElementById('fee-name').value = '';
         document.getElementById('fee-amount').value = 0;
         document.getElementById('fee-category').value = 'entrance';
         document.getElementById('fee-spot').value = '';
+        document.getElementById('fee-entry-announcement').value = '';
       }
       document.getElementById('fee-modal').classList.add('open');
     }
@@ -2700,7 +2719,8 @@
         name,
         amount: parseFloat(document.getElementById('fee-amount').value) || 0,
         category: document.getElementById('fee-category').value,
-        spotId: document.getElementById('fee-spot').value || null
+        spotId: document.getElementById('fee-spot').value || null,
+        announcement: document.getElementById('fee-entry-announcement').value.trim() || ''
       };
       if (editingFeeId) {
         const idx = fees.findIndex(x => x.id === editingFeeId);

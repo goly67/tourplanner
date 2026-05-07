@@ -728,6 +728,16 @@
     line-height: 1.5;
     box-shadow: var(--shadow);
   }
+  .fee-card-announcement {
+    background: rgba(255, 247, 229, 0.95);
+    border-left: 4px solid rgba(244,196,48,0.9);
+    color: #5b4d1f;
+    padding: 12px 14px;
+    border-radius: 12px;
+    margin: 14px 0 10px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
   .fee-stat-card {
     background: var(--card-bg);
     border-radius: 14px;
@@ -1634,6 +1644,7 @@ function renderFees() {
     const pct = payers.length ? Math.round(paidCount/payers.length*100) : 0;
     const catIcon = FEE_CAT_ICONS[f.category]||'📌';
 
+    const announcementHtml = f.announcement ? `<div class="fee-card-announcement">${f.announcement.replace(/\n/g,'<br>')}</div>` : '';
     const payerRows = payers.map(p=>`
       <div class="payer-row${p.paid?' paid':''}" id="prow-${p.id}">
         <div class="payer-avatar">${(p.name||'?')[0].toUpperCase()}</div>
@@ -1661,6 +1672,7 @@ function renderFees() {
         <div class="fee-prog-bar-outer"><div class="fee-prog-bar-inner" style="width:${pct}%"></div></div>
         <div class="fee-prog-label"><span>${paidCount} of ${payers.length} paid</span><span>${pct}%</span></div>
       </div>
+      ${announcementHtml}
       <div class="payer-list">${payerRows||'<p style="font-size:13px;color:var(--muted)">No payers listed.</p>'}</div>
     </div>`;
   }).join('');
