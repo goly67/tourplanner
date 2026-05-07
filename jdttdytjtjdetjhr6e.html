@@ -365,10 +365,6 @@
       transform: scale(1.15);
     }
 
-    .icon-btn.fav-active {
-      color: #e83e4a;
-    }
-
     .icon-btn.star-active {
       color: var(--gold);
     }
@@ -481,25 +477,6 @@
       height: 18px;
       cursor: pointer;
       accent-color: var(--mint);
-    }
-
-    .fav-ribbon {
-      position: absolute;
-      top: 12px;
-      left: -28px;
-      background: #e83e4a;
-      color: white;
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 1px;
-      padding: 4px 32px;
-      transform: rotate(-45deg);
-      text-transform: uppercase;
-      display: none;
-    }
-
-    .spot-card.d .fav-ribbon {
-      display: block;
     }
 
     .modal-overlay {
@@ -1384,6 +1361,40 @@
       margin-bottom: 24px;
     }
 
+    .fee-announcement {
+      background: #fff7e5;
+      border: 1px solid rgba(244,196,48,0.25);
+      color: #5b4d1f;
+      padding: 16px 18px;
+      border-radius: 16px;
+      margin-bottom: 20px;
+      line-height: 1.5;
+      box-shadow: var(--shadow);
+    }
+
+    .fee-announcement-editor {
+      margin-bottom: 20px;
+    }
+
+    .fee-announcement-editor textarea {
+      width: 100%;
+      min-height: 72px;
+      border-radius: 12px;
+      border: 1px solid #d4d4d4;
+      padding: 12px;
+      font-size: 14px;
+      margin-top: 8px;
+      resize: vertical;
+      font-family: inherit;
+    }
+
+    .fee-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
     .fee-stat-card {
       background: var(--card-bg);
       border-radius: 14px;
@@ -1620,16 +1631,11 @@
           <span class="stat-num" id="visited-count">0</span>
           <span class="stat-label">Visited</span>
         </div>
-        <div class="stat">
-          <span class="stat-num" id="fav-count">0</span>
-          <span class="stat-label">s</span>
-        </div>
       </div>
     </div>
     <div class="tabs-bar">
       <button class="tab-btn active" onclick="switchTab('all', this)">🗺️ All Spots</button>
       <button class="tab-btn" onclick="switchTab('priority', this)">⭐ Priority Order</button>
-      <button class="tab-btn" onclick="switchTab('s', this)">❤️ s</button>
       <button class="tab-btn" onclick="switchTab('map', this)">📍 Map</button>
       <button class="tab-btn" onclick="switchTab('schedule', this)">📅 Schedule</button>
       <button class="tab-btn" onclick="switchTab('fees', this)">💰 Fees</button>
@@ -1651,7 +1657,6 @@
         <span class="filter-chip active" onclick="setFilter('all',this)">All</span>
         <span class="filter-chip" onclick="setFilter('visited',this)">✅ Visited</span>
         <span class="filter-chip" onclick="setFilter('unvisited',this)">🔲 To Visit</span>
-        <span class="filter-chip" onclick="setFilter('fav',this)">❤️ Favorites</span>
         <button class="btn btn-primary" onclick="openModal()">＋ Add Spot</button>
       </div>
       <div class="spots-grid" id="spots-grid"></div>
@@ -1665,13 +1670,6 @@
       <p style="font-size:13px;color:var(--muted);margin-bottom:18px;">Use the arrows to reorder your itinerary. ⭐ spots
         appear first.</p>
       <div class="priority-list" id="priority-list"></div>
-    </div>
-
-    <div class="tab-content" id="tab-s">
-      <div class="toolbar">
-        <span class="toolbar-title">Your s ❤️</span>
-      </div>
-      <div class="spots-grid" id="fav-grid"></div>
     </div>
 
     <div class="tab-content" id="tab-map">
@@ -1729,6 +1727,15 @@
         <span class="toolbar-title">💰 Fee Monitoring</span>
         <button class="btn btn-primary" onclick="openFeeModal()">＋ Add Fee Entry</button>
       </div>
+
+      <div class="fee-announcement-editor">
+        <label>Fee announcement</label>
+        <textarea id="fee-announcement-input" placeholder="Enter the announcement shown above fees"></textarea>
+        <button class="btn btn-outline" onclick="saveFeeAnnouncement()">Save Announcement</button>
+      </div>
+
+      <!-- Announcement -->
+      <div class="fee-announcement" id="fee-announcement" style="display:none"></div>
 
       <!-- Summary stats -->
       <div class="fee-summary" id="fee-summary"></div>
@@ -1893,80 +1900,9 @@
   </div>
 
   <script>
-    // ─── CORRECTED COORDINATES (verified via Google Maps / Google Places API) ───
-    const DEFAULT_SPOTS = [
-      {
-        id: 's1', name: 'Mabua Pebble Beach',
-        desc: 'Sikat tungod kay imbis buhangin, puro puti kag hamis na bato. Relax kaayo ang lugar, bugnaw ang hangin, perfect para sa sunset views.',
-        tag: 'Nature', emoji: '🏖️', priority: 1,
-        lat: 9.8100385, lng: 125.4389845   // ✅ Google Places verified
-      },
-      {
-        id: 's2', name: 'Luneta Park',
-        desc: 'Paborito na tambayan sa Surigao. Peaceful sa adlaw, lively kag hayag sa gabii tungod sa mga suga kag mga tawo na nagalaag-laag.',
-        tag: 'Relaxation', emoji: '🌃', priority: 2,
-        lat: 9.7905416, lng: 125.4937515   // ✅ Google Places verified
-      },
-      {
-        id: 's3', name: 'Boulevard (Boule)',
-        desc: 'Ma-enjoy ang fresh air kag nindot na view sa dagat. Paborito para sa walking, kaon, kag tambay labi na sa hapon.',
-        tag: 'Relaxation', emoji: '🌊', priority: 3,
-        lat: 9.7901957, lng: 125.4930979   // ✅ Google Places verified
-      },
-      {
-        id: 's4', name: 'Cathedral of San Nicolas de Tolentino',
-        desc: 'Isa sa pinaka importante na simbahan sa Surigao. Hilom kag peaceful, makita diri ang kaanyag ng simbahan kag pagtuo ng mga Surigaonon. Founded 1754 by Augustinian Recollects.',
-        tag: 'Religious', emoji: '⛪', priority: 4,
-        lat: 9.7899094, lng: 125.4938238   // ✅ Google Places verified
-      },
-      {
-        id: 's5', name: 'Ipil Peak',
-        desc: 'Para sa mga hilig adventure! Makita ang nindot na view ng nature kag city sa itaas. Mabua/Malimono side para sa sunsets, Rizal side para sa sunrise. Presko ang hangin, worth it ang saka.',
-        tag: 'Adventure', emoji: '🏔️', priority: 5,
-        lat: 9.7791241, lng: 125.4467473   // ✅ Google Places verified
-      },
-      {
-        id: 's6', name: 'Silop Cave',
-        desc: 'Exciting na lugar nga makita ang natural rock formations sulod ng cave. Go to Silop Barangay Hall first to pay entrance (₱100/person) and get a guide. Perfect para sa mga ganahan mag-explore.',
-        tag: 'Adventure', emoji: '🦇', priority: 6,
-        lat: 9.7408151, lng: 125.5159409   // ✅ Google Places verified
-      },
-      {
-        id: 's7', name: 'Downtown Surigao',
-        desc: 'Sentro ng city. Mga tindahan, restaurants, kag busy na pangabuhi. Makita diri ang kasadya kag kabuhay ng Surigao City.',
-        tag: 'Urban', emoji: '🏙️', priority: 7,
-        lat: 9.7870, lng: 125.4980         // ✅ Surigao City center / market district
-      },
-      {
-        id: 's8', name: 'Surigao City Hall',
-        desc: 'Lugar kung diin nagutrabaho ang local government para sa mga tawo. Located along Rizal Street, infront of Rizal Park. Simbolo ng serbisyo kag pagtabang sa komunidad.',
-        tag: 'Government', emoji: '🏛️', priority: 8,
-        lat: 9.7913501, lng: 125.4933701   // ✅ Google Places verified
-      },
-      {
-        id: 's9', name: 'Surigao del Norte Provincial Capitol',
-        desc: 'Pinaka importante na building sa probinsya sa Capitol Road. Diri ginadumala ang mga programa kag serbisyo para sa Surigao del Norte. Daghan parking, may free WiFi.',
-        tag: 'Government', emoji: '🏛️', priority: 9,
-        lat: 9.7814513, lng: 125.4885908   // ✅ Google Places verified
-      },
-      {
-        id: 's10', name: 'PRISM',
-        desc: 'Provincial Research, Innovation, and Science Museum of Surigao del Norte. Located at Rizal cor. Peñaranda Sts. Open Mon–Fri, 8:30AM–5PM. The epicenter of learning, discovery, and innovation!',
-        tag: 'Science & Museum', emoji: '🔬', priority: 10,
-        lat: 9.7865494, lng: 125.4922695   // ✅ Google Places verified
-      },
-      {
-        id: 's11', name: 'Hotel Tavern Surigao',
-        desc: 'Best hotel in the area with an ocean view. Located along Borromeo St near the pier. Excellent accommodation, café Rosa serves great breakfast. Very accessible to the pier.',
-        tag: 'Accommodation', emoji: '🏨', priority: 11,
-        lat: 9.7852211, lng: 125.5002823   // ✅ Google Places verified
-      },
-    ];
-
     // ─── STATE ───────────────────────────────────────────────────
     let spots = [];
     let checked = {};
-    let fav = {};
     let stars = {};
     let priorityOrder = [];
     let editingId = null;
@@ -1980,6 +1916,7 @@
     let calSelectedDate = null;
     // Fees
     let fees = [];
+    let feeAnnouncement = '';
     let editingFeeId = null;
 
     function loadState() {
@@ -1987,7 +1924,7 @@
         // Always use fresh DEFAULT_SPOTS to get corrected coordinates
         const saved = JSON.parse(localStorage.getItem('sg_spots'));
         if (saved) {
-          // Merge saved user data (checked, fav, ) with corrected coordinates
+          // Merge saved user data (checked, stars) with corrected coordinates
           spots = DEFAULT_SPOTS.map(def => {
             const s = saved.find(x => x.id === def.id);
             // Keep the corrected lat/lng from DEFAULT_SPOTS; preserve user edits to name/desc/tag/emoji
@@ -2001,28 +1938,29 @@
           spots = JSON.parse(JSON.stringify(DEFAULT_SPOTS));
         }
         checked = JSON.parse(localStorage.getItem('sg_checked')) || {};
-        fav = JSON.parse(localStorage.getItem('sg_fav')) || {};
         stars = JSON.parse(localStorage.getItem('sg_stars')) || {};
         priorityOrder = JSON.parse(localStorage.getItem('sg_priority')) || spots.map(s => s.id);
         spots.forEach(s => { if (!priorityOrder.includes(s.id)) priorityOrder.push(s.id); });
         schedule = (JSON.parse(localStorage.getItem('sg_schedule')) || []).map(ev => ({ ...ev, status: ev.status || 'not_finished' }));
         fees = JSON.parse(localStorage.getItem('sg_fees')) || [];
+        feeAnnouncement = localStorage.getItem('sg_feeAnnouncement') || '';
       } catch (e) {
         spots = JSON.parse(JSON.stringify(DEFAULT_SPOTS));
-        checked = {}; fav = {}; stars = {};
+        checked = {}; stars = {};
         priorityOrder = spots.map(s => s.id);
         schedule = []; fees = [];
+        feeAnnouncement = '';
       }
     }
 
     function saveState() {
       localStorage.setItem('sg_spots', JSON.stringify(spots));
       localStorage.setItem('sg_checked', JSON.stringify(checked));
-      localStorage.setItem('sg_s', JSON.stringify(s));
-      localStorage.setItem('sg_', JSON.stringify());
+      localStorage.setItem('sg_stars', JSON.stringify(stars));
       localStorage.setItem('sg_priority', JSON.stringify(priorityOrder));
       localStorage.setItem('sg_schedule', JSON.stringify(schedule));
       localStorage.setItem('sg_fees', JSON.stringify(fees));
+      localStorage.setItem('sg_feeAnnouncement', feeAnnouncement);
       // ── Sync to Firebase (non-blocking) ──
       syncToFirebase();
     }
@@ -2033,8 +1971,8 @@
         firebase.database().ref('surigao_planner').set({
           spots,
           checked,
-          fav,
           stars,
+          announcement: feeAnnouncement,
           priorityOrder,
           schedule,
           fees,
@@ -2057,16 +1995,13 @@
 
     function renderSpotCard(s) {
       const isChecked = !!checked[s.id];
-      const isFav = !!fav[s.id];
       const isStar = !!stars[s.id];
       return `
-  <div class="spot-card${isChecked ? ' checked' : ''}${isFav ? ' d' : ''}" id="card-${s.id}" style="animation-delay:${Math.random() * 0.15}s">
-    <div class="fav-ribbon">Fave</div>
+  <div class="spot-card${isChecked ? ' checked' : ''}" id="card-${s.id}" style="animation-delay:${Math.random() * 0.15}s">
     <div class="card-top">
       <div class="card-emoji">${s.emoji}</div>
       <div class="card-actions">
         <button class="icon-btn${isStar ? ' star-active' : ''}" title="Star (priority)" onclick="toggleStar('${s.id}')">⭐</button>
-        <button class="icon-btn${isFav ? ' fav-active' : ''}" title="" onclick="toggleFav('${s.id}')">♥</button>
         <button class="icon-btn" title="Edit spot" onclick="openModal('${s.id}')">✏️</button>
         <button class="icon-btn" title="Delete" onclick="deleteSpot('${s.id}')">🗑</button>
       </div>
@@ -2092,7 +2027,6 @@
     function getFilteredSpots() {
       if (activeFilter === 'visited') return spots.filter(s => checked[s.id]);
       if (activeFilter === 'unvisited') return spots.filter(s => !checked[s.id]);
-      if (activeFilter === 'fav') return spots.filter(s => fav[s.id]);
       return spots;
     }
 
@@ -2140,17 +2074,6 @@
       </div>
     </div>`;
       }).join('');
-    }
-
-    function renders() {
-      const grid = document.getElementById('fav-grid');
-      const favs = spots.filter(s => fav[s.id]);
-      grid.innerHTML = favs.length ? favs.map(renderSpotCard).join('') :
-        `<div class="empty-state" style="grid-column:1/-1">
-      <div class="empty-icon">❤️</div>
-      <h4>No s yet</h4>
-      <p>Tap the ♥ on any spot to add it here</p>
-    </div>`;
     }
 
     function renderMapList() {
@@ -2260,10 +2183,8 @@
     function updateStats() {
       const total = spots.length;
       const visited = spots.filter(s => checked[s.id]).length;
-      const favCount = spots.filter(s => fav[s.id]).length;
       document.getElementById('total-count').textContent = total;
       document.getElementById('visited-count').textContent = visited;
-      document.getElementById('fav-count').textContent = favCount;
       document.getElementById('progress-label').textContent = `${visited} of ${total} visited`;
       const pct = total ? Math.round(visited / total * 100) : 0;
       document.getElementById('progress-bar').style.width = pct + '%';
@@ -2278,24 +2199,24 @@
       showToast(el.checked ? '✅ Marked as visited!' : '🔲 Unmarked');
     }
 
-    function toggleFav(id) {
-      fav[id] = !fav[id];
-      saveState();
-      renderAll();
-      showToast(fav[id] ? '❤️ Added to favorites!' : '💔 Removed from favorites');
-    }
-
     function toggleStar(id) {
       stars[id] = !stars[id];
       renderAll();
       showToast(stars[id] ? '⭐ Starred! Moved to top priority.' : '✦ Unstarred');
     }
 
+    function saveFeeAnnouncement() {
+      feeAnnouncement = document.getElementById('fee-announcement-input').value.trim();
+      saveState();
+      renderFees();
+      showToast('📣 Fee announcement saved');
+    }
+
     function deleteSpot(id) {
       if (!confirm('Remove this spot from your planner?')) return;
       spots = spots.filter(s => s.id !== id);
       priorityOrder = priorityOrder.filter(x => x !== id);
-      delete checked[id]; delete fav[id]; delete stars[id];
+      delete checked[id]; delete stars[id];
       saveState();
       renderAll();
       showToast('🗑 Spot removed');
@@ -2666,6 +2587,14 @@
     const FEE_CAT_ICONS = { entrance: '🎟', hotel: '🏨', transport: '🚌', guide: '👤', meal: '🍜', other: '📌' };
 
     function renderFees() {
+      const annEl = document.getElementById('fee-announcement');
+      if (annEl) {
+        annEl.textContent = feeAnnouncement || '';
+        annEl.style.display = feeAnnouncement ? 'block' : 'none';
+      }
+      const annInput = document.getElementById('fee-announcement-input');
+      if (annInput) annInput.value = feeAnnouncement || '';
+
       // Summary stats
       let totalAmt = 0, totalPaid = 0, totalPayers = 0, paidPayers = 0;
       fees.forEach(f => {

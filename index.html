@@ -718,6 +718,16 @@
     display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     gap: 14px; margin-bottom: 24px;
   }
+  .fee-announcement {
+    background: #fff7e5;
+    border: 1px solid rgba(244,196,48,0.25);
+    color: #5b4d1f;
+    padding: 16px 18px;
+    border-radius: 16px;
+    margin-bottom: 20px;
+    line-height: 1.5;
+    box-shadow: var(--shadow);
+  }
   .fee-stat-card {
     background: var(--card-bg);
     border-radius: 14px;
@@ -934,6 +944,9 @@
       <span class="toolbar-title">💰 Fee Monitoring</span>
     </div>
 
+    <!-- Announcement -->
+    <div class="fee-announcement" id="fee-announcement" style="display:none"></div>
+
     <!-- Summary stats -->
     <div class="fee-summary" id="fee-summary"></div>
 
@@ -946,76 +959,6 @@
 <div class="toast" id="toast"></div>
 
 <script>
-// ─── CORRECTED COORDINATES (verified via Google Maps / Google Places API) ───
-const DEFAULT_SPOTS = [
-  {
-    id: 's1', name: 'Mabua Pebble Beach',
-    desc: 'Sikat tungod kay imbis buhangin, puro puti kag hamis na bato. Relax kaayo ang lugar, bugnaw ang hangin, perfect para sa sunset views.',
-    tag: 'Nature', emoji: '🏖️', priority: 1,
-    lat: 9.8100385, lng: 125.4389845   // ✅ Google Places verified
-  },
-  {
-    id: 's2', name: 'Luneta Park',
-    desc: 'Paborito na tambayan sa Surigao. Peaceful sa adlaw, lively kag hayag sa gabii tungod sa mga suga kag mga tawo na nagalaag-laag.',
-    tag: 'Relaxation', emoji: '🌃', priority: 2,
-    lat: 9.7905416, lng: 125.4937515   // ✅ Google Places verified
-  },
-  {
-    id: 's3', name: 'Boulevard (Boule)',
-    desc: 'Ma-enjoy ang fresh air kag nindot na view sa dagat. Paborito para sa walking, kaon, kag tambay labi na sa hapon.',
-    tag: 'Relaxation', emoji: '🌊', priority: 3,
-    lat: 9.7901957, lng: 125.4930979   // ✅ Google Places verified
-  },
-  {
-    id: 's4', name: 'Cathedral of San Nicolas de Tolentino',
-    desc: 'Isa sa pinaka importante na simbahan sa Surigao. Hilom kag peaceful, makita diri ang kaanyag ng simbahan kag pagtuo ng mga Surigaonon. Founded 1754 by Augustinian Recollects.',
-    tag: 'Religious', emoji: '⛪', priority: 4,
-    lat: 9.7899094, lng: 125.4938238   // ✅ Google Places verified
-  },
-  {
-    id: 's5', name: 'Ipil Peak',
-    desc: 'Para sa mga hilig adventure! Makita ang nindot na view ng nature kag city sa itaas. Mabua/Malimono side para sa sunsets, Rizal side para sa sunrise. Presko ang hangin, worth it ang saka.',
-    tag: 'Adventure', emoji: '🏔️', priority: 5,
-    lat: 9.7791241, lng: 125.4467473   // ✅ Google Places verified
-  },
-  {
-    id: 's6', name: 'Silop Cave',
-    desc: 'Exciting na lugar nga makita ang natural rock formations sulod ng cave. Go to Silop Barangay Hall first to pay entrance (₱100/person) and get a guide. Perfect para sa mga ganahan mag-explore.',
-    tag: 'Adventure', emoji: '🦇', priority: 6,
-    lat: 9.7408151, lng: 125.5159409   // ✅ Google Places verified
-  },
-  {
-    id: 's7', name: 'Downtown Surigao',
-    desc: 'Sentro ng city. Mga tindahan, restaurants, kag busy na pangabuhi. Makita diri ang kasadya kag kabuhay ng Surigao City.',
-    tag: 'Urban', emoji: '🏙️', priority: 7,
-    lat: 9.7870, lng: 125.4980         // ✅ Surigao City center / market district
-  },
-  {
-    id: 's8', name: 'Surigao City Hall',
-    desc: 'Lugar kung diin nagutrabaho ang local government para sa mga tawo. Located along Rizal Street, infront of Rizal Park. Simbolo ng serbisyo kag pagtabang sa komunidad.',
-    tag: 'Government', emoji: '🏛️', priority: 8,
-    lat: 9.7913501, lng: 125.4933701   // ✅ Google Places verified
-  },
-  {
-    id: 's9', name: 'Surigao del Norte Provincial Capitol',
-    desc: 'Pinaka importante na building sa probinsya sa Capitol Road. Diri ginadumala ang mga programa kag serbisyo para sa Surigao del Norte. Daghan parking, may free WiFi.',
-    tag: 'Government', emoji: '🏛️', priority: 9,
-    lat: 9.7814513, lng: 125.4885908   // ✅ Google Places verified
-  },
-  {
-    id: 's10', name: 'PRISM',
-    desc: 'Provincial Research, Innovation, and Science Museum of Surigao del Norte. Located at Rizal cor. Peñaranda Sts. Open Mon–Fri, 8:30AM–5PM. The epicenter of learning, discovery, and innovation!',
-    tag: 'Science & Museum', emoji: '🔬', priority: 10,
-    lat: 9.7865494, lng: 125.4922695   // ✅ Google Places verified
-  },
-  {
-    id: 's11', name: 'Hotel Tavern Surigao',
-    desc: 'Best hotel in the area with an ocean view. Located along Borromeo St near the pier. Excellent accommodation, café Rosa serves great breakfast. Very accessible to the pier.',
-    tag: 'Accommodation', emoji: '🏨', priority: 11,
-    lat: 9.7852211, lng: 125.5002823   // ✅ Google Places verified
-  },
-];
-
 // ─── STATE ───────────────────────────────────────────────────
 let spots = [];
 let checked = {};
@@ -1032,6 +975,7 @@ let calMonth = new Date().getMonth();
 let calSelectedDate = null;
 // Fees
 let fees = [];
+let feeAnnouncement = '';
 let editingFeeId = null;
 
 function loadState() {
@@ -1058,11 +1002,13 @@ function loadState() {
     spots.forEach(s => { if (!priorityOrder.includes(s.id)) priorityOrder.push(s.id); });
     schedule = (JSON.parse(localStorage.getItem('sg_schedule')) || []).map(ev => ({ ...ev, status: ev.status || 'not_finished' }));
     fees = JSON.parse(localStorage.getItem('sg_fees')) || [];
+    feeAnnouncement = localStorage.getItem('sg_feeAnnouncement') || '';
   } catch(e) {
     spots = JSON.parse(JSON.stringify(DEFAULT_SPOTS));
     checked = {}; stars = {};
     priorityOrder = spots.map(s=>s.id);
     schedule = []; fees = [];
+    feeAnnouncement = '';
   }
 }
 
@@ -1680,6 +1626,12 @@ function renderFees() {
       <span class="fee-stat-label">Payers Done</span>
     </div>`;
 
+  const annEl = document.getElementById('fee-announcement');
+  if (annEl) {
+    annEl.textContent = feeAnnouncement || '';
+    annEl.style.display = feeAnnouncement ? 'block' : 'none';
+  }
+
   const el = document.getElementById('fee-entries-list');
   if (!fees.length) {
     el.innerHTML = `<div class="empty-state"><div class="empty-icon">💰</div><h4>No fee entries yet</h4><p>Add fees for hotels, entrances, guides, etc.</p></div>`;
@@ -1872,6 +1824,7 @@ renderAll();
         if (data.priorityOrder && Array.isArray(data.priorityOrder)) priorityOrder = data.priorityOrder;
         if (data.schedule && Array.isArray(data.schedule))  schedule = data.schedule;
         if (data.fees && Array.isArray(data.fees))          fees     = data.fees;
+        if (data.announcement !== undefined)                feeAnnouncement = data.announcement || '';
         renderAll();
         console.log('🔄 Live data updated from planner');
       } catch(e) {
