@@ -1672,7 +1672,7 @@ function renderSelectedDay() {
 
 function renderEventItem(ev) {
   const spot = spots.find(s=>s.id===ev.spotId);
-  const dur = ev.duration ? `${ev.duration} min` : '';
+  const dur = ev.duration ? `${(ev.duration / 60).toFixed(1)} hours` : '';
   return `<div class="event-item type-${ev.type||'other'}">
     <div class="event-time">${ev.time||''}</div>
     <div class="event-body">
