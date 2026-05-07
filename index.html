@@ -647,6 +647,30 @@
     display: flex; align-items: flex-start; gap: 14px;
     animation: cardIn 0.3s ease both;
   }
+  .event-item.status-finished {
+    background: linear-gradient(145deg, rgba(220,255,235,0.96) 0%, rgba(245,255,250,0.98) 100%);
+    border-left-color: #2eaa6a;
+  }
+  .event-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    text-transform: uppercase;
+  }
+  .event-status-badge.status-finished {
+    background: #d4f5e2;
+    color: #1a7a45;
+  }
+  .event-status-badge.status-pending {
+    background: #eef2ff;
+    color: #4b5563;
+  }
   .event-item.type-hotel { border-left-color: var(--coral); }
   .event-item.type-leisure { border-left-color: var(--mint); }
   .event-item.type-transport { border-left-color: var(--gold); }
@@ -853,7 +877,7 @@
     <div class="toolbar">
       <span class="toolbar-title">Visit Priority</span>
     </div>
-    <p style="font-size:13px;color:var(--muted);margin-bottom:18px;">Spots ordered by visit priority. ⭐ starred spots appear first.</p>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:18px;">Spots ordered by visit priority. ⭐  spots appear first.</p>
     <div class="priority-list" id="priority-list"></div>
   </div>
 
@@ -896,6 +920,12 @@
       <span class="toolbar-title" style="font-size:1.1rem">🗓 Upcoming Events</span>
     </div>
     <div class="upcoming-list" id="upcoming-list"></div>
+
+    <!-- Finished events -->
+    <div class="toolbar" style="margin-top:22px">
+      <span class="toolbar-title" style="font-size:1.1rem">✅ Finished Events</span>
+    </div>
+    <div class="upcoming-list" id="finished-list"></div>
   </div>
 
   <!-- ── FEES TAB ──────────────────────────────────────────────── -->
@@ -989,7 +1019,7 @@ const DEFAULT_SPOTS = [
 // ─── STATE ───────────────────────────────────────────────────
 let spots = [];
 let checked = {};
-let starred = {};
+let stars = {};
 let priorityOrder = [];
 let editingId = null;
 let activeFilter = 'all';
@@ -1009,7 +1039,7 @@ function loadState() {
     // Always use fresh DEFAULT_SPOTS to get corrected coordinates
     const saved = JSON.parse(localStorage.getItem('sg_spots'));
     if (saved) {
-      // Merge saved user data (checked, starred) with corrected coordinates
+      // Merge saved user data (checked, ) with corrected coordinates
       spots = DEFAULT_SPOTS.map(def => {
         const s = saved.find(x => x.id === def.id);
         // Keep the corrected lat/lng from DEFAULT_SPOTS; preserve user edits to name/desc/tag/emoji
@@ -1023,14 +1053,14 @@ function loadState() {
       spots = JSON.parse(JSON.stringify(DEFAULT_SPOTS));
     }
     checked = JSON.parse(localStorage.getItem('sg_checked')) || {};
-    starred = JSON.parse(localStorage.getItem('sg_starred')) || {};
+    stars = JSON.parse(localStorage.getItem('sg_stars')) || {};
     priorityOrder = JSON.parse(localStorage.getItem('sg_priority')) || spots.map(s=>s.id);
     spots.forEach(s => { if (!priorityOrder.includes(s.id)) priorityOrder.push(s.id); });
-    schedule = JSON.parse(localStorage.getItem('sg_schedule')) || [];
+    schedule = (JSON.parse(localStorage.getItem('sg_schedule')) || []).map(ev => ({ ...ev, status: ev.status || 'not_finished' }));
     fees = JSON.parse(localStorage.getItem('sg_fees')) || [];
   } catch(e) {
     spots = JSON.parse(JSON.stringify(DEFAULT_SPOTS));
-    checked = {}; starred = {};
+    checked = {}; stars = {};
     priorityOrder = spots.map(s=>s.id);
     schedule = []; fees = [];
   }
@@ -1050,19 +1080,19 @@ function getPriorityLabel(id) {
   if (idx === 0) return '<span class="card-priority priority-1">🥇 Go First</span>';
   if (idx === 1) return '<span class="card-priority priority-2">🥈 Second Stop</span>';
   if (idx === 2) return '<span class="card-priority priority-3">🥉 Third Stop</span>';
-  if (starred[id]) return '<span class="card-priority priority-1">⭐ Starred</span>';
+  if (stars[id]) return '<span class="card-priority priority-1">⭐ </span>';
   return `<span class="card-priority priority-custom">Stop #${idx+1}</span>`;
 }
 
 function renderSpotCard(s) {
   const isChecked = !!checked[s.id];
-  const isStar = !!starred[s.id];
+  const isStar = !!stars[s.id];
   return `
   <div class="spot-card${isChecked?' checked':''}" id="card-${s.id}" style="animation-delay:${Math.random()*0.15}s">
     <div class="card-top">
       <div class="card-emoji">${s.emoji}</div>
       <div class="card-actions">
-        ${isStar?'<span class="icon-btn star-active" title="Starred">⭐</span>':''}
+        <button class="icon-btn${isStar ? ' star-active' : ''}" title="Star (priority)" onclick="toggleStar('${s.id}')">⭐</button>
       </div>
     </div>
     <div class="card-body">
@@ -1123,7 +1153,7 @@ function renderPriority() {
       <div class="priority-rank ${rankClass}">${i+1}</div>
       <div style="font-size:1.6rem">${s.emoji}</div>
       <div class="priority-info">
-        <strong>${s.name}${starred[s.id]?' ⭐':''}</strong>
+        <strong>${s.name}${stars[s.id]?' ⭐':''}</strong>
         <span>${s.tag} · ${isChecked?'✅ Visited':'🔲 Not yet visited'}</span>
       </div>
     </div>`;
@@ -1254,42 +1284,23 @@ function toggleCheck(id, el) {
 }
 
 function toggleStar(id) {
-  starred[id] = !starred[id];
-  saveState();
-  if (starred[id]) {
-    priorityOrder = [id, ...priorityOrder.filter(x=>x!==id)];
-    saveState();
-  }
+  stars[id] = !stars[id];
   renderAll();
-  showToast(starred[id] ? '⭐ Starred! Moved to top priority.' : '✦ Unstarred');
+  showToast(stars[id] ? '⭐ Starred! Moved to top priority.' : '✦ Unstarred');
 }
 
 function deleteSpot(id) {
   if (!confirm('Remove this spot from your planner?')) return;
   spots = spots.filter(s=>s.id!==id);
   priorityOrder = priorityOrder.filter(x=>x!==id);
-  delete checked[id]; delete starred[id];
+  delete checked[id]; delete stars[id];
   saveState();
   renderAll();
   showToast('🗑 Spot removed');
 }
 
-function movePriority(id, dir) {
-  const i = priorityOrder.indexOf(id);
-  const j = i + dir;
-  if (j < 0 || j >= priorityOrder.length) return;
-  [priorityOrder[i], priorityOrder[j]] = [priorityOrder[j], priorityOrder[i]];
-  saveState();
-  renderAll();
-}
-
-function autoSortPriority() {
-  priorityOrder.sort((a,b) => {
-    const sa = starred[a]?0:1, sb = starred[b]?0:1;
-    if (sa!==sb) return sa-sb;
-    const ca = checked[a]?1:0, cb = checked[b]?1:0;
-    return ca-cb;
-  });
+function sortByStars() {
+  priorityOrder.sort((a,b) => (stars[b] ? 1 : 0) - (stars[a] ? 1 : 0));
   saveState();
   renderAll();
   showToast('✨ Priority sorted by stars!');
@@ -1386,10 +1397,21 @@ function showToast(msg) {
 // ─── SCHEDULE ────────────────────────────────────────────────
 const TYPE_COLORS = { visit:'dot-visit', hotel:'dot-hotel', leisure:'dot-leisure', transport:'dot-transport', meal:'dot-meal', other:'dot-other' };
 const TYPE_LABELS = { visit:'🎥 Site Recording', hotel:'🏨 Hotel', leisure:'🌅 Leisure', transport:'🚌 Transport', meal:'🍜 Meal', other:'📌 Other' };
+const EVENT_STATUS_LABELS = {
+  finished: '✅ Finished',
+  not_finished: '⌛ Not finished'
+};
+
+function getEventStatusBadge(status) {
+  return status === 'finished'
+    ? '<span class="event-status-badge status-finished">✅ Finished</span>'
+    : '<span class="event-status-badge status-pending">⌛ Not finished</span>';
+}
 
 function renderSchedule() {
   renderCalendar();
   renderUpcoming();
+  renderFinishedEvents();
 }
 
 function renderCalendar() {
@@ -1467,13 +1489,15 @@ function renderSelectedDay() {
 function renderEventItem(ev) {
   const spot = spots.find(s=>s.id===ev.spotId);
   const dur = ev.duration ? `${(ev.duration / 60).toFixed(1)} hours` : '';
-  return `<div class="event-item type-${ev.type||'other'}">
+  const status = ev.status || 'not_finished';
+  return `<div class="event-item type-${ev.type||'other'} ${status === 'finished' ? 'status-finished' : ''}>
     <div class="event-time">${ev.time||''}</div>
     <div class="event-body">
       <div class="event-title">${ev.title}</div>
       <div class="event-meta">
         ${spot?`${spot.emoji} ${spot.name} · `:''}${TYPE_LABELS[ev.type]||'Other'}${dur?' · '+dur:''}
       </div>
+      ${getEventStatusBadge(status)}
       ${ev.notes?`<div class="event-notes">💬 ${ev.notes}</div>`:''}
     </div>
   </div>`;
@@ -1482,7 +1506,7 @@ function renderEventItem(ev) {
 function renderUpcoming() {
   const today = new Date().toISOString().slice(0,10);
   const upcoming = schedule
-    .filter(ev=>ev.date>=today)
+    .filter(ev => ev.date >= today && (ev.status || 'not_finished') !== 'finished')
     .sort((a,b)=>a.date.localeCompare(b.date)||a.time.localeCompare(b.time))
     .slice(0,10);
 
@@ -1504,8 +1528,43 @@ function renderUpcoming() {
       <div class="upcoming-info">
         <div class="upcoming-title">${ev.title}</div>
         <div class="upcoming-meta">${ev.time} · ${TYPE_LABELS[ev.type]||''}${spot?' · '+spot.emoji+' '+spot.name:''}</div>
+        ${getEventStatusBadge(ev.status || 'not_finished')}
         ${ev.notes?`<div style="font-size:11.5px;color:var(--muted);margin-top:3px;font-style:italic">💬 ${ev.notes}</div>`:''}
       </div>
+
+    </div>`;
+  }).join('');
+}
+
+function renderFinishedEvents() {
+  const finished = schedule
+    .filter(ev => (ev.status || 'not_finished') === 'finished')
+    .sort((a,b)=>a.date.localeCompare(b.date)||a.time.localeCompare(b.time));
+
+  const el = document.getElementById('finished-list');
+  if (!el) return;
+  if (!finished.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">✅</div><h4>No finished events yet</h4><p>Mark an event as Finished to see it here</p></div>`;
+    return;
+  }
+
+  el.innerHTML = finished.map(ev => {
+    const spot = spots.find(s=>s.id===ev.spotId);
+    const d = new Date(ev.date+'T00:00:00');
+    const month = d.toLocaleDateString('en',{month:'short'}).toUpperCase();
+    const day = d.getDate();
+    return `<div class="upcoming-item">
+      <div class="upcoming-date-box" style="background:#2eaa6a">
+        <div class="upcoming-month">${month}</div>
+        <div class="upcoming-day">${day}</div>
+      </div>
+      <div class="upcoming-info">
+        <div class="upcoming-title">${ev.title}</div>
+        <div class="upcoming-meta">${ev.time} · ${TYPE_LABELS[ev.type]||''}${spot?' · '+spot.emoji+' '+spot.name:''}</div>
+        ${getEventStatusBadge('finished')}
+        ${ev.notes?`<div style="font-size:11.5px;color:var(--muted);margin-top:3px;font-style:italic">💬 ${ev.notes}</div>`:''}
+      </div>
+
     </div>`;
   }).join('');
 }
@@ -1809,7 +1868,7 @@ renderAll();
           });
         }
         if (data.checked)      checked       = data.checked;
-        if (data.starred)      starred       = data.starred;
+        if (data.stars)        stars         = data.stars;
         if (data.priorityOrder && Array.isArray(data.priorityOrder)) priorityOrder = data.priorityOrder;
         if (data.schedule && Array.isArray(data.schedule))  schedule = data.schedule;
         if (data.fees && Array.isArray(data.fees))          fees     = data.fees;
