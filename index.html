@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Surigao City — Travel Progress</title>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,700;1,300;1,700&family=DM+Sans:wght@300;400;500;600&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+<title>Surigao City — Tourism Planner</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600&family=Caveat:wght@600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <style>
   :root {
@@ -14,11 +14,13 @@
     --gold: #f4c430;
     --sand: #fdf6e3;
     --foam: #e8f4f8;
+    --deep: #051f35;
     --mint: #43c6ac;
     --text: #1a1a2e;
     --muted: #6b7a8d;
     --white: #ffffff;
-    --shadow: 0 8px 32px rgba(10,61,98,0.12);
+    --card-bg: rgba(255,255,255,0.92);
+    --shadow: 0 8px 32px rgba(10,61,98,0.13);
     --radius: 18px;
   }
 
@@ -26,542 +28,1984 @@
 
   body {
     font-family: 'DM Sans', sans-serif;
-    background: #f5efe3;
+    background: var(--sand);
     color: var(--text);
     min-height: 100vh;
     overflow-x: hidden;
   }
 
-  /* ── PAPER TEXTURE BG ── */
-  body::before {
-    content: '';
-    position: fixed; inset: 0; z-index: 0; pointer-events: none;
-    background-image:
-      radial-gradient(ellipse 90% 60% at 15% 10%, rgba(30,136,229,0.10) 0%, transparent 55%),
-      radial-gradient(ellipse 70% 50% at 85% 90%, rgba(67,198,172,0.10) 0%, transparent 55%),
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+  .bg-layer {
+    position: fixed; inset: 0; z-index: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 10% 0%, rgba(30,136,229,0.18) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 50% at 90% 100%, rgba(67,198,172,0.14) 0%, transparent 60%),
+      linear-gradient(160deg, #fdf6e3 0%, #e8f4f8 50%, #d0eaf5 100%);
+  }
+  .wave-svg {
+    position: fixed; bottom: 0; left: 0; width: 100%; z-index: 0; opacity: 0.18; pointer-events: none;
   }
 
-  /* ── CONNECTING STATE ── */
-  .connecting {
-    position: fixed; inset: 0; z-index: 999;
-    background: var(--ocean);
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    color: white; gap: 18px;
-    transition: opacity 0.6s ease;
-  }
-  .connecting.hidden { opacity: 0; pointer-events: none; }
-  .connecting-logo { font-size: 3rem; animation: bob 1.8s ease-in-out infinite; }
-  @keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
-  .connecting h2 {
-    font-family: 'Fraunces', serif; font-size: 1.8rem; font-weight: 300;
-    letter-spacing: 1px;
-  }
-  .connecting p { font-size: 13px; opacity: 0.6; }
-  .spinner {
-    width: 36px; height: 36px;
-    border: 3px solid rgba(255,255,255,0.2);
-    border-top-color: var(--gold);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* ── HEADER ── */
   header {
     position: relative; z-index: 10;
-    background: linear-gradient(135deg, #0a3d62 0%, #145a86 55%, #1e88e5 100%);
+    background: linear-gradient(135deg, var(--ocean) 0%, #145a86 60%, var(--sky) 100%);
+    padding: 0;
     overflow: hidden;
   }
   .header-inner {
-    max-width: 960px; margin: 0 auto;
-    padding: 52px 28px 42px;
+    max-width: 900px; margin: 0 auto;
+    padding: 48px 24px 36px;
     position: relative;
   }
-  /* Decorative postcard lines */
-  .header-lines {
-    position: absolute; right: 0; top: 0; bottom: 0;
-    width: 260px; opacity: 0.08;
-    background: repeating-linear-gradient(
-      0deg, transparent, transparent 28px,
-      white 28px, white 30px
-    );
-  }
-  .header-stamp {
-    position: absolute; right: 36px; top: 36px;
-    width: 80px; height: 80px;
-    border: 3px solid rgba(244,196,48,0.5);
-    border-radius: 4px;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    background: rgba(244,196,48,0.08);
-  }
-  .stamp-emoji { font-size: 2rem; }
-  .stamp-label {
-    font-size: 8px; font-weight: 700; letter-spacing: 2px;
-    text-transform: uppercase; color: rgba(244,196,48,0.7);
-    margin-top: 2px;
-  }
-  .live-badge {
-    display: inline-flex; align-items: center; gap: 7px;
-    background: rgba(67,198,172,0.2);
-    border: 1px solid rgba(67,198,172,0.4);
-    color: #43c6ac;
-    font-size: 11px; font-weight: 700; letter-spacing: 2px;
+  .header-badge {
+    display: inline-block;
+    background: var(--coral);
+    color: white;
+    font-size: 11px; font-weight: 600; letter-spacing: 2px;
     text-transform: uppercase;
     padding: 5px 14px; border-radius: 30px;
-    margin-bottom: 20px;
+    margin-bottom: 18px;
   }
-  .live-dot {
-    width: 7px; height: 7px; border-radius: 50%;
-    background: #43c6ac;
-    animation: pulse 1.5s ease-in-out infinite;
-  }
-  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)} }
   header h1 {
-    font-family: 'Fraunces', serif;
-    font-size: clamp(2rem, 6vw, 3.6rem);
-    color: white; font-weight: 300;
-    line-height: 1.1; margin-bottom: 8px;
-  }
-  header h1 em { color: var(--gold); font-style: italic; font-weight: 700; }
-  .header-caption {
-    font-family: 'Caveat', cursive;
-    font-size: 1.2rem;
-    color: rgba(255,255,255,0.65);
-    margin-bottom: 32px;
-  }
-
-  /* ── HERO PROGRESS ── */
-  .hero-progress {
-    display: flex; gap: 16px; flex-wrap: wrap;
-    margin-bottom: 8px;
-  }
-  .hp-stat {
-    background: rgba(255,255,255,0.10);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255,255,255,0.18);
-    border-radius: 14px;
-    padding: 14px 22px; color: white;
-    min-width: 100px;
-  }
-  .hp-num {
-    font-family: 'Fraunces', serif;
-    font-size: 2.2rem; font-weight: 700; line-height: 1;
-    display: block;
-  }
-  .hp-label { font-size: 11px; opacity: 0.65; text-transform: uppercase; letter-spacing: 1.5px; margin-top: 2px; }
-  .hp-bar-wrap {
-    flex: 1; min-width: 180px;
-    background: rgba(255,255,255,0.10);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255,255,255,0.18);
-    border-radius: 14px;
-    padding: 14px 22px; color: white;
-    display: flex; flex-direction: column; justify-content: center; gap: 10px;
-  }
-  .hp-bar-label { font-size: 12px; opacity: 0.75; display: flex; justify-content: space-between; }
-  .hp-bar-outer {
-    background: rgba(255,255,255,0.18);
-    border-radius: 30px; height: 8px; overflow: hidden;
-  }
-  .hp-bar-inner {
-    height: 100%; border-radius: 30px;
-    background: linear-gradient(90deg, #43c6ac, var(--gold));
-    transition: width 1.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-  .hp-pct {
-    font-family: 'Fraunces', serif;
-    font-size: 1.5rem; font-weight: 700;
-  }
-
-  /* ── MAIN ── */
-  main {
-    position: relative; z-index: 5;
-    max-width: 960px; margin: 0 auto;
-    padding: 36px 20px 80px;
-  }
-
-  /* ── SECTION HEADINGS ── */
-  .section-head {
-    display: flex; align-items: baseline; gap: 12px;
-    margin-bottom: 20px; margin-top: 42px;
-  }
-  .section-head:first-child { margin-top: 0; }
-  .section-title {
-    font-family: 'Fraunces', serif;
-    font-size: 1.6rem; font-weight: 700;
-    color: var(--ocean);
-  }
-  .section-count {
-    font-size: 13px; color: var(--muted);
-    background: rgba(10,61,98,0.07);
-    padding: 2px 10px; border-radius: 20px;
-  }
-
-  /* ── SPOT CARDS ── */
-  .spots-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 16px;
-  }
-  .spot-card {
-    background: rgba(255,255,255,0.88);
-    backdrop-filter: blur(8px);
-    border-radius: var(--radius);
-    border: 1.5px solid rgba(255,255,255,0.9);
-    box-shadow: var(--shadow);
-    overflow: hidden;
-    transition: transform 0.22s ease, box-shadow 0.22s ease;
-    position: relative;
-    animation: fadeUp 0.4s ease both;
-  }
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(22px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  .spot-card:hover { transform: translateY(-3px); box-shadow: 0 14px 38px rgba(10,61,98,0.16); }
-
-  /* Visited glow */
-  .spot-card.is-visited {
-    background: linear-gradient(145deg, rgba(212,245,226,0.95) 0%, rgba(195,242,215,0.92) 100%);
-    border-color: rgba(46,170,106,0.45);
-    box-shadow: 0 8px 28px rgba(46,170,106,0.14);
-  }
-  .spot-card.is-visited .card-name { color: #1a6b43; }
-  .spot-card.is-visited .card-desc { color: #3a7a56; }
-
-  /* Not visited */
-  .spot-card.is-unvisited { opacity: 0.88; }
-
-  .card-inner { padding: 18px 20px 20px; }
-  .card-row1 {
-    display: flex; justify-content: space-between; align-items: flex-start;
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.2rem, 6vw, 3.8rem);
+    color: var(--white);
+    line-height: 1.1;
     margin-bottom: 10px;
   }
-  .card-emoji { font-size: 2.6rem; line-height: 1; }
-  .card-badges { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
-  .badge-visited {
-    display: inline-flex; align-items: center; gap: 5px;
-    background: #2eaa6a; color: white;
-    font-size: 10px; font-weight: 700; letter-spacing: 1px;
-    padding: 4px 10px; border-radius: 20px;
-    text-transform: uppercase;
+  header h1 span { color: var(--gold); font-style: italic; }
+  .header-sub {
+    font-family: 'Caveat', cursive;
+    font-size: 1.25rem;
+    color: rgba(255,255,255,0.75);
+    margin-bottom: 28px;
   }
-  .badge-todo {
-    display: inline-flex; align-items: center; gap: 5px;
-    background: rgba(10,61,98,0.07); color: var(--muted);
-    font-size: 10px; font-weight: 600; letter-spacing: 1px;
-    padding: 4px 10px; border-radius: 20px;
-    text-transform: uppercase;
+  .header-stats {
+    display: flex; gap: 28px; flex-wrap: wrap;
   }
-  .badge-fav {
-    background: rgba(232,62,74,0.12); color: #e83e4a;
-    font-size: 10px; font-weight: 700;
-    padding: 3px 10px; border-radius: 20px;
+  .stat {
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+    backdrop-filter: blur(8px);
+    padding: 10px 18px; border-radius: 12px;
+    color: white;
   }
-  .badge-stop {
-    background: rgba(10,61,98,0.08); color: var(--ocean);
-    font-size: 10px; font-weight: 700;
-    padding: 3px 10px; border-radius: 20px;
-  }
-  .badge-stop.top { background: rgba(244,196,48,0.18); color: #b8860b; }
-  .card-name {
-    font-family: 'Fraunces', serif;
-    font-size: 1.15rem; font-weight: 700;
-    color: var(--ocean); margin-bottom: 6px;
-  }
-  .card-desc {
-    font-size: 12.5px; color: var(--muted);
-    line-height: 1.6; margin-bottom: 12px;
-  }
-  .card-tag {
-    display: inline-block;
-    background: var(--foam); color: var(--sky);
-    font-size: 11px; font-weight: 600;
-    padding: 3px 10px; border-radius: 20px;
-    letter-spacing: 0.4px;
+  .stat-num { font-size: 1.5rem; font-weight: 700; display: block; }
+  .stat-label { font-size: 11px; opacity: 0.75; text-transform: uppercase; letter-spacing: 1px; }
+  .header-deco {
+    position: absolute; right: -20px; top: -20px;
+    width: 220px; height: 220px;
+    background: radial-gradient(circle, rgba(244,196,48,0.18) 0%, transparent 70%);
+    border-radius: 50%;
   }
 
-  /* ── VISITED CHECK LINE ── */
-  .card-check-bar {
-    height: 4px;
-    background: rgba(10,61,98,0.06);
-    border-radius: 0 0 18px 18px;
-    overflow: hidden;
+  .tabs-bar {
+    position: relative; z-index: 10;
+    background: var(--ocean);
+    display: flex; gap: 0;
+    padding: 0 24px;
+    max-width: 900px; margin: 0 auto;
+    border-bottom: 2px solid rgba(255,255,255,0.1);
   }
-  .spot-card.is-visited .card-check-bar {
-    background: linear-gradient(90deg, #43c6ac, #2eaa6a);
+  .tab-btn {
+    background: none; border: none; cursor: pointer;
+    padding: 14px 20px;
+    color: rgba(255,255,255,0.6);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13.5px; font-weight: 500;
+    letter-spacing: 0.5px;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .tab-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
+  .tab-btn:hover:not(.active) { color: white; }
+
+  main {
+    position: relative; z-index: 5;
+    max-width: 900px; margin: 0 auto;
+    padding: 32px 16px 60px;
   }
 
-  /* ── PRIORITY SECTION ── */
-  .priority-list { display: flex; flex-direction: column; gap: 10px; }
-  .priority-row {
-    background: rgba(255,255,255,0.88);
-    border-radius: 14px;
-    border: 1.5px solid rgba(255,255,255,0.9);
-    box-shadow: 0 4px 16px rgba(10,61,98,0.07);
-    padding: 14px 18px;
-    display: flex; align-items: center; gap: 14px;
-    animation: fadeUp 0.35s ease both;
-    transition: transform 0.18s;
-  }
-  .priority-row:hover { transform: translateX(3px); }
-  .priority-row.is-visited {
-    background: linear-gradient(135deg, rgba(212,245,226,0.9) 0%, rgba(195,242,215,0.88) 100%);
-    border-color: rgba(46,170,106,0.3);
-  }
-  .rank-circle {
-    width: 38px; height: 38px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 700; font-size: 14px; flex-shrink: 0;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
-  }
-  .rank-1 { background: linear-gradient(135deg, #ffd700, #ffaa00); color: white; }
-  .rank-2 { background: linear-gradient(135deg, #d4d4d4, #aaa); color: white; }
-  .rank-3 { background: linear-gradient(135deg, #d4936a, #b87048); color: white; }
-  .rank-n  { background: var(--foam); color: var(--muted); }
-  .rank-done { background: linear-gradient(135deg, #43c6ac, #2eaa6a); color: white; }
-  .pr-emoji { font-size: 1.5rem; flex-shrink: 0; }
-  .pr-info { flex: 1; }
-  .pr-name {
-    font-family: 'Fraunces', serif;
-    font-size: 0.98rem; font-weight: 700;
-    color: var(--ocean); display: block; margin-bottom: 1px;
-  }
-  .priority-row.is-visited .pr-name { color: #1a6b43; }
-  .pr-meta { font-size: 11.5px; color: var(--muted); }
-  .pr-status {
-    font-size: 11px; font-weight: 700;
-    padding: 3px 10px; border-radius: 20px;
-    flex-shrink: 0;
-  }
-  .pr-status.done { background: rgba(46,170,106,0.15); color: #1a7a45; }
-  .pr-status.todo { background: rgba(10,61,98,0.08); color: var(--muted); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
 
-  /* ── MAP ── */
-  .map-card {
-    background: rgba(255,255,255,0.9);
+  .toolbar {
+    display: flex; gap: 10px; flex-wrap: wrap;
+    margin-bottom: 24px; align-items: center;
+  }
+  .toolbar-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.35rem;
+    color: var(--ocean);
+    flex: 1;
+  }
+  .btn {
+    border: none; cursor: pointer;
+    padding: 9px 18px; border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px; font-weight: 600;
+    transition: all 0.18s;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn-primary {
+    background: var(--coral); color: white;
+    box-shadow: 0 4px 12px rgba(255,107,74,0.3);
+  }
+  .btn-primary:hover { background: #e85535; transform: translateY(-1px); }
+  .btn-outline {
+    background: white; color: var(--ocean);
+    border: 1.5px solid rgba(10,61,98,0.2);
+  }
+  .btn-outline:hover { border-color: var(--sky); background: var(--foam); }
+  .filter-chip {
+    background: white; border: 1.5px solid rgba(10,61,98,0.15);
+    padding: 7px 14px; border-radius: 30px;
+    font-size: 12.5px; font-weight: 500; cursor: pointer;
+    color: var(--muted); transition: all 0.15s;
+  }
+  .filter-chip.active { background: var(--ocean); color: white; border-color: var(--ocean); }
+
+  .spots-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+    gap: 18px;
+  }
+  .spot-card {
+    background: var(--card-bg);
     border-radius: var(--radius);
     box-shadow: var(--shadow);
-    border: 1.5px solid rgba(255,255,255,0.9);
+    border: 1.5px solid rgba(255,255,255,0.8);
     overflow: hidden;
+    transition: all 0.25s;
+    position: relative;
+    animation: cardIn 0.4s ease both;
   }
-  .map-top { padding: 20px 24px 0; }
-  .map-top h3 {
-    font-family: 'Fraunces', serif;
-    color: var(--ocean); font-size: 1.3rem; font-weight: 700;
-    margin-bottom: 4px;
+  @keyframes cardIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
   }
-  .map-top p { font-size: 13px; color: var(--muted); margin-bottom: 14px; }
-  #viewer-map { width: 100%; height: 480px; }
-  .map-legend {
-    padding: 14px 24px;
-    display: flex; gap: 18px; flex-wrap: wrap;
-    border-top: 1px solid rgba(10,61,98,0.07);
-    font-size: 12px; color: var(--muted);
+  .spot-card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(10,61,98,0.18); }
+  .spot-card.checked {
+    background: linear-gradient(145deg, rgba(220,255,235,0.97) 0%, rgba(200,248,220,0.95) 100%);
+    border-color: rgba(67,198,140,0.55);
+    box-shadow: 0 8px 28px rgba(67,198,140,0.18);
   }
-  .legend-item { display: flex; align-items: center; gap: 6px; }
-  .legend-dot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
-  .map-chips {
-    padding: 14px 24px 20px;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-    gap: 8px;
-    border-top: 1px solid rgba(10,61,98,0.06);
+  .spot-card.checked .card-name { color: #1a6b43; }
+  .spot-card.checked .card-desc { color: #3a7a56; }
+  .spot-card.checked::after {
+    content: '';
+    position: absolute; inset: 0; border-radius: var(--radius);
+    background: linear-gradient(135deg, rgba(67,198,140,0.06) 0%, transparent 60%);
+    pointer-events: none;
   }
-  .map-chip {
-    display: flex; align-items: center; gap: 9px;
-    background: var(--foam); border-radius: 10px;
-    padding: 9px 13px;
-    font-size: 12.5px; color: var(--ocean); font-weight: 500;
-    border: 1px solid rgba(10,61,98,0.08);
-    cursor: pointer; transition: background 0.14s;
-  }
-  .map-chip:hover { background: #d0eaf5; }
-  .map-chip.chip-done { background: #d4f5e2; border-color: rgba(46,170,106,0.25); color: #1a6b43; }
-  .chip-rank {
-    margin-left: auto;
-    background: var(--ocean); color: white;
-    font-size: 9px; font-weight: 700;
-    width: 18px; height: 18px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-  }
-  .chip-rank.done { background: #2eaa6a; }
 
-  /* ── MARKER STYLES ── */
-  .spot-marker { display: flex; flex-direction: column; align-items: center; cursor: pointer; }
+  .card-top {
+    padding: 18px 18px 0;
+    display: flex; justify-content: space-between; align-items: flex-start;
+  }
+  .card-emoji { font-size: 2.4rem; line-height: 1; }
+  .card-actions { display: flex; gap: 6px; }
+  .icon-btn {
+    background: none; border: none; cursor: pointer;
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; transition: all 0.15s;
+    color: var(--muted);
+  }
+  .icon-btn:hover { background: var(--foam); color: var(--ocean); transform: scale(1.15); }
+  .icon-btn.fav-active { color: #e83e4a; }
+  .icon-btn.star-active { color: var(--gold); }
+
+  .card-body { padding: 12px 18px 18px; }
+  .card-priority {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 10.5px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 1px; margin-bottom: 6px;
+    padding: 3px 10px; border-radius: 30px;
+  }
+  .priority-1 { background: rgba(255,107,74,0.12); color: var(--coral); }
+  .priority-2 { background: rgba(30,136,229,0.10); color: var(--sky); }
+  .priority-3 { background: rgba(67,198,172,0.12); color: #2eaa8a; }
+  .priority-custom { background: rgba(100,100,100,0.08); color: var(--muted); }
+
+  .card-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem; font-weight: 700;
+    color: var(--ocean); margin-bottom: 5px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .checked-badge {
+    display: none;
+    background: #43c6ac; color: white;
+    font-size: 9px; font-weight: 700;
+    padding: 2px 8px; border-radius: 20px;
+    font-family: 'DM Sans', sans-serif;
+    letter-spacing: 1px; text-transform: uppercase;
+  }
+  .spot-card.checked .checked-badge { display: inline-block; }
+  .card-desc {
+    font-size: 13px; color: var(--muted); line-height: 1.6;
+    margin-bottom: 14px;
+  }
+  .card-footer {
+    display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+  }
+  .tag {
+    background: var(--foam);
+    color: var(--sky); font-size: 11px; font-weight: 600;
+    padding: 3px 10px; border-radius: 20px;
+    letter-spacing: 0.5px;
+  }
+  .check-wrap {
+    margin-left: auto;
+    display: flex; align-items: center; gap: 7px;
+  }
+  .check-wrap label {
+    font-size: 12px; color: var(--muted); cursor: pointer;
+    user-select: none;
+  }
+  .check-wrap input[type=checkbox] {
+    width: 18px; height: 18px; cursor: pointer;
+    accent-color: var(--mint);
+  }
+
+  .fav-ribbon {
+    position: absolute; top: 12px; left: -28px;
+    background: #e83e4a; color: white;
+    font-size: 10px; font-weight: 700; letter-spacing: 1px;
+    padding: 4px 32px; transform: rotate(-45deg);
+    text-transform: uppercase;
+    display: none;
+  }
+  .spot-card.favorited .fav-ribbon { display: block; }
+
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0; z-index: 100;
+    background: rgba(5,31,53,0.55); backdrop-filter: blur(4px);
+    align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--sand);
+    border-radius: 24px;
+    padding: 36px;
+    width: 100%; max-width: 480px;
+    box-shadow: 0 24px 80px rgba(5,31,53,0.35);
+    animation: modalIn 0.25s ease;
+  }
+  @keyframes modalIn {
+    from { opacity: 0; transform: scale(0.93) translateY(16px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  .modal h3 {
+    font-family: 'Playfair Display', serif;
+    color: var(--ocean); font-size: 1.5rem; margin-bottom: 22px;
+  }
+  .form-group { margin-bottom: 16px; }
+  .form-group label {
+    display: block; font-size: 12px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 1px;
+    color: var(--muted); margin-bottom: 6px;
+  }
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
+    width: 100%;
+    border: 1.5px solid rgba(10,61,98,0.15);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    background: white;
+    color: var(--text);
+    transition: border 0.15s;
+    outline: none;
+  }
+  .form-group input:focus,
+  .form-group textarea:focus,
+  .form-group select:focus { border-color: var(--sky); }
+  .form-group textarea { resize: vertical; min-height: 80px; }
+  .emoji-picker {
+    display: flex; gap: 8px; flex-wrap: wrap;
+  }
+  .emoji-opt {
+    font-size: 1.5rem; padding: 6px; border-radius: 8px;
+    cursor: pointer; transition: background 0.12s;
+    border: 2px solid transparent;
+  }
+  .emoji-opt:hover { background: var(--foam); }
+  .emoji-opt.selected { border-color: var(--sky); background: var(--foam); }
+  .modal-footer {
+    display: flex; gap: 10px; justify-content: flex-end;
+    margin-top: 24px;
+  }
+
+  .priority-list { display: flex; flex-direction: column; gap: 12px; }
+  .priority-item {
+    background: var(--card-bg);
+    border-radius: 14px;
+    padding: 16px 20px;
+    box-shadow: var(--shadow);
+    display: flex; align-items: center; gap: 14px;
+    border: 1.5px solid rgba(255,255,255,0.8);
+    transition: all 0.2s;
+    cursor: grab;
+    animation: cardIn 0.35s ease both;
+  }
+  .priority-item:hover { transform: translateX(4px); }
+  .priority-rank {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 15px; flex-shrink: 0;
+  }
+  .rank-1 { background: linear-gradient(135deg, #ffd700, #ffa500); color: white; }
+  .rank-2 { background: linear-gradient(135deg, #c0c0c0, #a0a0a0); color: white; }
+  .rank-3 { background: linear-gradient(135deg, #cd7f32, #b8682a); color: white; }
+  .rank-rest { background: var(--foam); color: var(--muted); }
+  .priority-info { flex: 1; }
+  .priority-info strong {
+    font-family: 'Playfair Display', serif;
+    color: var(--ocean); font-size: 1rem;
+    display: block; margin-bottom: 2px;
+  }
+  .priority-info span { font-size: 12px; color: var(--muted); }
+  .priority-move { display: flex; gap: 4px; }
+  .move-btn {
+    background: var(--foam); border: none; cursor: pointer;
+    width: 28px; height: 28px; border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; color: var(--muted); transition: all 0.15s;
+  }
+  .move-btn:hover { background: var(--ocean); color: white; }
+
+  .map-section {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    border: 1.5px solid rgba(255,255,255,0.8);
+  }
+  .map-header { padding: 20px 24px 0; }
+  .map-header h3 {
+    font-family: 'Playfair Display', serif;
+    color: var(--ocean); font-size: 1.3rem; margin-bottom: 4px;
+  }
+  .map-header p { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
+  #leaflet-map {
+    width: 100%; height: 480px;
+  }
+  .spot-marker {
+    display: flex; flex-direction: column; align-items: center;
+    cursor: pointer;
+  }
   .marker-bubble {
-    background: white; border: 3px solid var(--ocean);
-    border-radius: 50% 50% 50% 0; transform: rotate(-45deg);
+    background: white;
+    border: 3px solid var(--ocean);
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
     width: 44px; height: 44px;
     display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 4px 14px rgba(10,61,98,0.3); position: relative;
+    box-shadow: 0 4px 14px rgba(10,61,98,0.28);
+    position: relative;
+    transition: all 0.2s;
   }
-  .marker-bubble.visited { background: #d4f5e2; border-color: #2eaa6a; }
-  .marker-emoji { transform: rotate(45deg); font-size: 18px; line-height: 1; }
+  .marker-bubble.visited {
+    background: #d4f5e2;
+    border-color: #2eaa6a;
+  }
+  .marker-emoji {
+    transform: rotate(45deg);
+    font-size: 18px; line-height: 1;
+  }
   .marker-check {
     position: absolute; bottom: -4px; right: -4px;
-    background: #2eaa6a; color: white; border-radius: 50%;
-    width: 18px; height: 18px; font-size: 10px;
-    display: flex; align-items: center; justify-content: center;
-    transform: rotate(45deg); border: 2px solid white; font-weight: 700;
+    background: #2eaa6a; color: white;
+    border-radius: 50%; width: 18px; height: 18px;
+    font-size: 10px; display: flex; align-items: center; justify-content: center;
+    transform: rotate(45deg);
+    border: 2px solid white;
+    font-weight: 700;
   }
   .marker-num {
     position: absolute; top: -4px; left: -4px;
-    background: var(--ocean); color: white; border-radius: 50%;
-    width: 18px; height: 18px; font-size: 9px;
-    display: flex; align-items: center; justify-content: center;
-    transform: rotate(45deg); border: 2px solid white; font-weight: 700;
+    background: var(--ocean); color: white;
+    border-radius: 50%; width: 18px; height: 18px;
+    font-size: 9px; display: flex; align-items: center; justify-content: center;
+    transform: rotate(45deg);
+    border: 2px solid white;
+    font-weight: 700;
   }
   .leaflet-popup-content-wrapper {
     border-radius: 14px !important;
     box-shadow: 0 8px 28px rgba(10,61,98,0.18) !important;
+    border: 1.5px solid rgba(10,61,98,0.1);
   }
   .map-popup { font-family: 'DM Sans', sans-serif; min-width: 180px; }
   .map-popup-emoji { font-size: 1.8rem; margin-bottom: 4px; }
-  .map-popup h4 { font-family: 'Fraunces', serif; color: var(--ocean); font-size: 1rem; margin-bottom: 4px; }
-  .map-popup p { font-size: 12px; color: var(--muted); line-height: 1.5; margin-bottom: 6px; }
-  .map-popup-visited { display: inline-flex; align-items: center; gap: 4px; background: #d4f5e2; color: #1a7a45; font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
-
-  /* ── FOOTER ── */
-  .viewer-footer {
-    text-align: center; padding: 48px 20px 32px;
-    font-family: 'Caveat', cursive;
-    font-size: 1.1rem; color: var(--muted);
-    position: relative; z-index: 5;
+  .map-popup h4 {
+    font-family: 'Playfair Display', serif;
+    color: var(--ocean); font-size: 1rem; margin-bottom: 4px;
   }
-  .viewer-footer span { color: var(--coral); }
+  .map-popup p { font-size: 12px; color: var(--muted); line-height: 1.5; margin-bottom: 8px; }
+  .map-popup-badge {
+    display: inline-block;
+    background: var(--foam); color: var(--sky);
+    font-size: 10px; font-weight: 600;
+    padding: 2px 8px; border-radius: 20px;
+    margin-bottom: 6px;
+  }
+  .map-popup-visited {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: #d4f5e2; color: #1a7a45;
+    font-size: 10px; font-weight: 700;
+    padding: 3px 10px; border-radius: 20px;
+    margin-top: 4px;
+  }
+  .map-legend {
+    padding: 16px 24px;
+    display: flex; gap: 20px; flex-wrap: wrap; align-items: center;
+    border-top: 1px solid rgba(10,61,98,0.08);
+    font-size: 12px; color: var(--muted);
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-dot {
+    width: 12px; height: 12px; border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .map-spots-list {
+    padding: 16px 24px 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 8px;
+    border-top: 1px solid rgba(10,61,98,0.06);
+  }
+  .map-spot-chip {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--foam); border-radius: 10px;
+    padding: 9px 13px;
+    font-size: 12.5px;
+    color: var(--ocean);
+    font-weight: 500;
+    border: 1px solid rgba(10,61,98,0.08);
+    transition: background 0.15s;
+    cursor: pointer;
+  }
+  .map-spot-chip.chip-visited { background: #d4f5e2; border-color: rgba(46,170,106,0.25); color: #1a6b43; }
+  .map-spot-chip:hover { background: #d0eaf5; }
+  .map-spot-chip .spot-emoji { font-size: 1.1rem; }
+  .chip-num {
+    margin-left: auto;
+    background: var(--ocean); color: white;
+    font-size: 9px; font-weight: 700;
+    width: 18px; height: 18px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .chip-num.chip-done { background: #2eaa6a; }
 
-  /* ── ERROR STATE ── */
-  .error-state {
-    text-align: center; padding: 80px 20px;
+  .empty-state {
+    text-align: center; padding: 60px 20px;
     color: var(--muted);
   }
-  .error-state .error-icon { font-size: 3rem; margin-bottom: 14px; }
-  .error-state h3 { font-family: 'Fraunces', serif; color: var(--ocean); margin-bottom: 8px; }
-  .error-state p { font-size: 13px; line-height: 1.7; }
-  .error-state code { background: rgba(10,61,98,0.08); padding: 2px 6px; border-radius: 4px; font-size: 12px; }
+  .empty-state .empty-icon { font-size: 3rem; margin-bottom: 12px; }
+  .empty-state h4 {
+    font-family: 'Playfair Display', serif;
+    color: var(--ocean); margin-bottom: 8px;
+  }
+  .empty-state p { font-size: 13px; }
 
-  @media (max-width: 520px) {
+  .progress-wrap {
+    background: white;
+    border-radius: 14px;
+    padding: 18px 24px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow);
+    border: 1.5px solid rgba(255,255,255,0.8);
+    display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+  }
+  .progress-text { font-size: 13px; color: var(--muted); min-width: 120px; }
+  .progress-bar-outer {
+    flex: 1; min-width: 120px;
+    background: var(--foam); border-radius: 30px; height: 10px; overflow: hidden;
+  }
+  .progress-bar-inner {
+    background: linear-gradient(90deg, var(--mint), var(--sky));
+    height: 100%; border-radius: 30px;
+    transition: width 0.5s ease;
+  }
+  .progress-pct { font-weight: 700; color: var(--ocean); font-size: 15px; }
+
+  .toast {
+    position: fixed; bottom: 24px; right: 24px; z-index: 200;
+    background: var(--ocean); color: white;
+    padding: 12px 20px; border-radius: 12px;
+    font-size: 13.5px; font-weight: 500;
+    box-shadow: 0 8px 24px rgba(5,31,53,0.35);
+    transform: translateY(80px); opacity: 0;
+    transition: all 0.3s ease;
+    pointer-events: none;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  @media (max-width: 500px) {
     .spots-grid { grid-template-columns: 1fr; }
-    .hero-progress { flex-direction: column; }
-    .hp-bar-wrap { min-width: auto; }
+    .header-stats { gap: 12px; }
+    .modal { padding: 24px; }
+  }
+
+  /* ─── SCHEDULE CALENDAR ─────────────────────────────────────── */
+  .cal-wrap {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border: 1.5px solid rgba(255,255,255,0.8);
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+  .cal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 24px;
+    background: linear-gradient(135deg, var(--ocean), var(--sky));
+    color: white;
+  }
+  .cal-header h3 { font-family: 'Playfair Display', serif; font-size: 1.3rem; }
+  .cal-nav-btn {
+    background: rgba(255,255,255,0.15); border: none; color: white;
+    width: 36px; height: 36px; border-radius: 50%; cursor: pointer;
+    font-size: 18px; display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+  }
+  .cal-nav-btn:hover { background: rgba(255,255,255,0.3); }
+  .cal-grid {
+    display: grid; grid-template-columns: repeat(7,1fr);
+    padding: 16px;
+  }
+  .cal-day-label {
+    text-align: center; font-size: 11px; font-weight: 700;
+    color: var(--muted); text-transform: uppercase; letter-spacing: 1px;
+    padding: 6px 0;
+  }
+  .cal-cell {
+    min-height: 58px; padding: 4px;
+    border-radius: 10px; margin: 2px;
+    cursor: pointer; position: relative;
+    transition: background 0.12s;
+  }
+  .cal-cell:hover { background: var(--foam); }
+  .cal-cell.today { background: rgba(30,136,229,0.12); }
+  .cal-cell.selected { background: rgba(255,107,74,0.15); box-shadow: 0 0 0 2px var(--coral); }
+  .cal-cell.other-month .cal-date { color: #ccc; }
+  .cal-date {
+    font-size: 13px; font-weight: 600; color: var(--ocean);
+    margin-bottom: 3px; text-align: center;
+  }
+  .cal-cell.today .cal-date {
+    background: var(--sky); color: white;
+    width: 24px; height: 24px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 3px;
+    font-size: 12px;
+  }
+  .cal-dots { display: flex; gap: 3px; justify-content: center; flex-wrap: wrap; }
+  .cal-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .dot-visit { background: var(--sky); }
+  .dot-hotel { background: var(--coral); }
+  .dot-leisure { background: var(--mint); }
+  .dot-transport { background: var(--gold); }
+  .dot-meal { background: #e67e22; }
+  .dot-other { background: var(--muted); }
+
+  .cal-selected-day {
+    padding: 0 16px 16px;
+    border-top: 1px solid rgba(10,61,98,0.07);
+  }
+  .cal-selected-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.05rem; color: var(--ocean);
+    padding: 14px 0 10px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+
+  .event-list { display: flex; flex-direction: column; gap: 10px; }
+  .event-item {
+    background: white;
+    border-radius: 12px;
+    padding: 14px 16px;
+    border-left: 4px solid var(--sky);
+    box-shadow: 0 2px 10px rgba(10,61,98,0.07);
+    display: flex; align-items: flex-start; gap: 14px;
+    animation: cardIn 0.3s ease both;
+  }
+  .event-item.type-hotel { border-left-color: var(--coral); }
+  .event-item.type-leisure { border-left-color: var(--mint); }
+  .event-item.type-transport { border-left-color: var(--gold); }
+  .event-item.type-meal { border-left-color: #e67e22; }
+  .event-time {
+    font-size: 12px; font-weight: 700; color: var(--ocean);
+    min-width: 48px; padding-top: 1px;
+  }
+  .event-body { flex: 1; }
+  .event-title { font-weight: 600; font-size: 14px; color: var(--text); margin-bottom: 3px; }
+  .event-meta { font-size: 11.5px; color: var(--muted); }
+  .event-notes { font-size: 12px; color: var(--muted); margin-top: 4px; font-style: italic; }
+  .event-actions { display: flex; gap: 4px; }
+  .event-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.5px;
+    padding: 2px 8px; border-radius: 20px;
+    background: var(--foam); color: var(--sky);
+    text-transform: uppercase;
+  }
+
+  .upcoming-list { display: flex; flex-direction: column; gap: 10px; }
+  .upcoming-item {
+    background: var(--card-bg);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    border: 1.5px solid rgba(255,255,255,0.8);
+    padding: 16px 20px;
+    display: flex; gap: 16px; align-items: center;
+    animation: cardIn 0.3s ease both;
+  }
+  .upcoming-date-box {
+    min-width: 54px; text-align: center;
+    background: var(--ocean); color: white;
+    border-radius: 10px; padding: 8px;
+  }
+  .upcoming-month { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.8; }
+  .upcoming-day { font-family: 'Playfair Display', serif; font-size: 1.8rem; line-height: 1; }
+  .upcoming-info { flex: 1; }
+  .upcoming-title { font-weight: 600; font-size: 14.5px; color: var(--text); margin-bottom: 3px; }
+  .upcoming-meta { font-size: 12px; color: var(--muted); }
+
+  /* ─── FEE MONITORING ────────────────────────────────────────── */
+  .fee-summary {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 14px; margin-bottom: 24px;
+  }
+  .fee-stat-card {
+    background: var(--card-bg);
+    border-radius: 14px;
+    padding: 18px 20px;
+    box-shadow: var(--shadow);
+    border: 1.5px solid rgba(255,255,255,0.8);
+    text-align: center;
+  }
+  .fee-stat-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem; font-weight: 900;
+    color: var(--ocean); display: block;
+  }
+  .fee-stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .fee-stat-card.outstanding .fee-stat-num { color: var(--coral); }
+  .fee-stat-card.paid .fee-stat-num { color: var(--mint); }
+
+  .fee-entry {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border: 1.5px solid rgba(255,255,255,0.8);
+    margin-bottom: 18px;
+    overflow: hidden;
+    animation: cardIn 0.35s ease both;
+  }
+  .fee-entry-header {
+    display: flex; align-items: center; gap: 14px;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, rgba(10,61,98,0.04) 0%, transparent 100%);
+    border-bottom: 1px solid rgba(10,61,98,0.07);
+  }
+  .fee-entry-emoji { font-size: 2rem; }
+  .fee-entry-info { flex: 1; }
+  .fee-entry-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem; color: var(--ocean); margin-bottom: 2px;
+  }
+  .fee-entry-meta { font-size: 12px; color: var(--muted); }
+  .fee-amount {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem; font-weight: 900; color: var(--ocean);
+    white-space: nowrap;
+  }
+  .fee-entry-actions { display: flex; gap: 6px; }
+
+  .payer-list { padding: 14px 20px; display: flex; flex-direction: column; gap: 8px; }
+  .payer-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px;
+    background: white; border-radius: 10px;
+    border: 1.5px solid rgba(10,61,98,0.08);
+    transition: all 0.18s;
+  }
+  .payer-row.paid { background: rgba(67,198,140,0.08); border-color: rgba(67,198,140,0.3); }
+  .payer-avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: var(--ocean); color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; flex-shrink: 0;
+  }
+  .payer-row.paid .payer-avatar { background: var(--mint); }
+  .payer-name { flex: 1; font-weight: 600; font-size: 13.5px; color: var(--text); }
+  .payer-status {
+    font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px;
+    letter-spacing: 0.5px; cursor: pointer; transition: all 0.15s;
+    border: none;
+  }
+  .payer-status.paid { background: rgba(67,198,140,0.15); color: #1a7a45; }
+  .payer-status.unpaid { background: rgba(255,107,74,0.12); color: var(--coral); }
+  .payer-actions { display: flex; gap: 4px; }
+  .payer-paid-date { font-size: 10px; color: var(--muted); }
+
+  .fee-add-payer {
+    padding: 0 20px 14px;
+    display: flex; gap: 8px; align-items: center;
+  }
+  .fee-add-payer input {
+    flex: 1; border: 1.5px solid rgba(10,61,98,0.15);
+    border-radius: 8px; padding: 8px 12px;
+    font-family: 'DM Sans', sans-serif; font-size: 13px;
+    outline: none; background: white; color: var(--text);
+  }
+  .fee-add-payer input:focus { border-color: var(--sky); }
+
+  .fee-progress {
+    padding: 0 20px 16px;
+  }
+  .fee-prog-bar-outer {
+    background: var(--foam); border-radius: 30px; height: 8px; overflow: hidden;
+  }
+  .fee-prog-bar-inner {
+    background: linear-gradient(90deg, var(--mint), var(--sky));
+    height: 100%; border-radius: 30px;
+    transition: width 0.5s ease;
+  }
+  .fee-prog-label {
+    display: flex; justify-content: space-between;
+    font-size: 11.5px; color: var(--muted); margin-top: 5px;
   }
 </style>
 </head>
 <body>
 
-<!-- CONNECTING SCREEN -->
-<div class="connecting" id="connecting-screen">
-  <div class="connecting-logo">🌊</div>
-  <h2>Loading Surigao Planner…</h2>
-  <p>Fetching live data from Firebase</p>
-  <div class="spinner"></div>
-</div>
+<div class="bg-layer"></div>
+<svg class="wave-svg" viewBox="0 0 1440 120" fill="none"><path d="M0,60 C360,110 1080,10 1440,60 L1440,120 L0,120 Z" fill="#1e88e5"/></svg>
 
-<!-- HEADER -->
 <header>
   <div class="header-inner">
-    <div class="header-lines"></div>
-    <div class="header-stamp">
-      <div class="stamp-emoji">🌊</div>
-      <div class="stamp-label">Surigao</div>
-    </div>
-    <div class="live-badge">
-      <span class="live-dot"></span>
-      Live Progress
-    </div>
-    <h1>Surigao City<br><em>Tour Tracker</em></h1>
-    <p class="header-caption">Watching the adventure unfold in real-time ✨</p>
-    <div class="hero-progress" id="hero-progress">
-      <div class="hp-stat">
-        <span class="hp-num" id="stat-visited">0</span>
-        <span class="hp-label">Visited</span>
+    <div class="header-deco"></div>
+    <span class="header-badge">🌊 Surigao del Norte</span>
+    <h1>Surigao City<br><span>Tour Planner</span></h1>
+    <p class="header-sub">Maayong adlaw! Plan your perfect Surigao adventure ✨</p>
+    <div class="header-stats">
+      <div class="stat">
+        <span class="stat-num" id="total-count">11</span>
+        <span class="stat-label">Spots</span>
       </div>
-      <div class="hp-stat">
-        <span class="hp-num" id="stat-total">0</span>
-        <span class="hp-label">Total Spots</span>
+      <div class="stat">
+        <span class="stat-num" id="visited-count">0</span>
+        <span class="stat-label">Visited</span>
       </div>
-      <div class="hp-stat">
-        <span class="hp-num" id="stat-favs">0</span>
-        <span class="hp-label">Favorites</span>
-      </div>
-      <div class="hp-bar-wrap">
-        <div class="hp-bar-label">
-          <span>Overall Progress</span>
-          <span class="hp-pct" id="stat-pct">0%</span>
-        </div>
-        <div class="hp-bar-outer">
-          <div class="hp-bar-inner" id="stat-bar" style="width:0%"></div>
-        </div>
+      <div class="stat">
+        <span class="stat-num" id="fav-count">0</span>
+        <span class="stat-label">Favorites</span>
       </div>
     </div>
+  </div>
+  <div class="tabs-bar">
+    <button class="tab-btn active" onclick="switchTab('all', this)">🗺️ All Spots</button>
+    <button class="tab-btn" onclick="switchTab('priority', this)">⭐ Priority Order</button>
+    <button class="tab-btn" onclick="switchTab('favorites', this)">❤️ Favorites</button>
+    <button class="tab-btn" onclick="switchTab('map', this)">📍 Map</button>
+    <button class="tab-btn" onclick="switchTab('schedule', this)">📅 Schedule</button>
+    <button class="tab-btn" onclick="switchTab('fees', this)">💰 Fees</button>
   </div>
 </header>
 
-<main id="main-content">
-  <div class="error-state" id="error-state" style="display:none">
-    <div class="error-icon">🔌</div>
-    <h3>No Data Yet</h3>
-    <p>
-      Make sure the Firebase Realtime Database is set up correctly and the<br>
-      planner has synced at least once.<br><br>
-      Check that <code>databaseURL</code> in the config is correct.
-    </p>
-  </div>
+<main>
 
-  <!-- SPOTS BY PRIORITY -->
-  <div id="spots-section" style="display:none">
-    <div class="section-head">
-      <span class="section-title">📍 All Spots</span>
-      <span class="section-count" id="spots-count-label">0 spots</span>
+  <div class="tab-content active" id="tab-all">
+    <div class="progress-wrap">
+      <span class="progress-text" id="progress-label">0 of 11 visited</span>
+      <div class="progress-bar-outer">
+        <div class="progress-bar-inner" id="progress-bar" style="width:0%"></div>
+      </div>
+      <span class="progress-pct" id="progress-pct">0%</span>
+    </div>
+    <div class="toolbar">
+      <span class="toolbar-title">Tourist Spots</span>
+      <span class="filter-chip active" onclick="setFilter('all',this)">All</span>
+      <span class="filter-chip" onclick="setFilter('visited',this)">✅ Visited</span>
+      <span class="filter-chip" onclick="setFilter('unvisited',this)">🔲 To Visit</span>
+      <span class="filter-chip" onclick="setFilter('favorites',this)">❤️ Favorites</span>
+      <button class="btn btn-primary" onclick="openModal()">＋ Add Spot</button>
     </div>
     <div class="spots-grid" id="spots-grid"></div>
-  </div><br>
+  </div>
 
-  <!-- MAP -->
-  <div id="map-section" style="display:none">
-    <div class="section-head">
-      <span class="section-title">🗺️ Route Map</span>
+  <div class="tab-content" id="tab-priority">
+    <div class="toolbar">
+      <span class="toolbar-title">Visit Priority</span>
+      <button class="btn btn-outline" onclick="autoSortPriority()">✨ Auto-sort by Stars</button>
     </div>
-    <div class="map-card">
-      <div class="map-top">
-        <h3>Live Surigao Map</h3>
-        <p>Green pins = visited ✅ · Numbers = priority order · Click a pin to see details</p>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:18px;">Use the arrows to reorder your itinerary. ⭐ starred spots appear first.</p>
+    <div class="priority-list" id="priority-list"></div>
+  </div>
+
+  <div class="tab-content" id="tab-favorites">
+    <div class="toolbar">
+      <span class="toolbar-title">Your Favorites ❤️</span>
+    </div>
+    <div class="spots-grid" id="fav-grid"></div>
+  </div>
+
+  <div class="tab-content" id="tab-map">
+    <div class="map-section">
+      <div class="map-header">
+        <h3>📍 Surigao City Live Map</h3>
+        <p>Verified Google Maps coordinates for every spot. Green pins = visited ✅. Click any chip below to zoom in.</p>
       </div>
-      <div id="viewer-map"></div>
+      <div id="leaflet-map"></div>
       <div class="map-legend">
         <span style="font-weight:600;color:var(--ocean)">Legend:</span>
         <span class="legend-item"><span class="legend-dot" style="background:var(--ocean)"></span> To Visit</span>
         <span class="legend-item"><span class="legend-dot" style="background:#2eaa6a"></span> Visited ✅</span>
-        <span class="legend-item"><span style="font-size:11px">— — —</span> Route</span>
+        <span class="legend-item"><span style="font-size:11px">— — —</span> Route Path</span>
       </div>
-      <div class="map-chips" id="map-chips"></div>
+      <div class="map-spots-list" id="map-spots-list"></div>
     </div>
-  </div><br>
+  </div>
 
-  <!-- PRIORITY ORDER -->
-  <div id="priority-section" style="display:none">
-    <div class="section-head">
-      <span class="section-title">⭐ Priority Order</span>
+  <!-- ── SCHEDULE TAB ──────────────────────────────────────────── -->
+  <div class="tab-content" id="tab-schedule">
+    <div class="toolbar">
+      <span class="toolbar-title">📅 Schedule & Calendar</span>
+      <button class="btn btn-primary" onclick="openEventModal()">＋ Add Event</button>
     </div>
-    <div class="priority-list" id="priority-list"></div>
+
+    <!-- Calendar widget -->
+    <div class="cal-wrap">
+      <div class="cal-header">
+        <button class="cal-nav-btn" onclick="calNav(-1)">‹</button>
+        <h3 id="cal-month-label">Month Year</h3>
+        <button class="cal-nav-btn" onclick="calNav(1)">›</button>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+      <div class="cal-selected-day" id="cal-selected-day"></div>
+    </div>
+
+    <!-- Upcoming events -->
+    <div class="toolbar" style="margin-top:8px">
+      <span class="toolbar-title" style="font-size:1.1rem">🗓 Upcoming Events</span>
+    </div>
+    <div class="upcoming-list" id="upcoming-list"></div>
+  </div>
+
+  <!-- ── FEES TAB ──────────────────────────────────────────────── -->
+  <div class="tab-content" id="tab-fees">
+    <div class="toolbar">
+      <span class="toolbar-title">💰 Fee Monitoring</span>
+      <button class="btn btn-primary" onclick="openFeeModal()">＋ Add Fee Entry</button>
+    </div>
+
+    <!-- Summary stats -->
+    <div class="fee-summary" id="fee-summary"></div>
+
+    <!-- Fee entries list -->
+    <div id="fee-entries-list"></div>
   </div>
 
 </main>
 
-<footer class="viewer-footer">
-  Made with <span>♥</span> for Surigao City adventures · Updates live as the planner syncs
-</footer>
+<div class="modal-overlay" id="modal" onclick="handleModalClick(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3 id="modal-title">＋ Add New Spot</h3>
+    <div class="form-group">
+      <label>Spot Name</label>
+      <input type="text" id="inp-name" placeholder="e.g. Mabua Pebble Beach">
+    </div>
+    <div class="form-group">
+      <label>Description</label>
+      <textarea id="inp-desc" placeholder="Describe this place..."></textarea>
+    </div>
+    <div class="form-group">
+      <label>Category Tag</label>
+      <select id="inp-tag">
+        <option>Nature</option>
+        <option>Heritage</option>
+        <option>Adventure</option>
+        <option>Relaxation</option>
+        <option>Cultural</option>
+        <option>Religious</option>
+        <option>Science & Museum</option>
+        <option>Food & Entertainment</option>
+        <option>Urban</option>
+        <option>Accommodation</option>
+        <option>Government</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Pick an Emoji</label>
+      <div class="emoji-picker">
+        <span class="emoji-opt selected" onclick="selectEmoji(this)">🏖️</span>
+        <span class="emoji-opt" onclick="selectEmoji(this)">🌊</span>
+        <span class="emoji-opt" onclick="selectEmoji(this)">🏔️</span>
+        <span class="emoji-opt" onclick="selectEmoji(this)">⛪</span>
+        <span class="emoji-opt" onclick="selectEmoji(this)">🏛️</span>
+        <span class="emoji-opt" onclick="selectEmoji(this)">🦇</span>
+        <span class="emoji-opt" onclick="selectEmoji(this)">🔬</span>
+        <span class="emoji-opt" onclick="selectEmoji(this)">🏙️</span>
+        <span class="emoji-opt" onclick="selectEmoji(this)">🍜</span>
+        <span class="emoji-opt" onclick="selectEmoji(this)">🏨</span>
+        <span class="emoji-opt" onclick="selectEmoji(this)">🎡</span>
+        <span class="emoji-opt" onclick="selectEmoji(this)">🌺</span>
+        <span class="emoji-opt" onclick="selectEmoji(this)">📸</span>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveSpot()">Save Spot</button>
+    </div>
+  </div>
+</div>
 
-<!-- ═══ FIREBASE ═══════════════════════════════════════════════ -->
-<!-- 🔴 REPLACE THIS CONFIG WITH YOUR OWN FIREBASE CONFIG BELOW 🔴 -->
+<div class="toast" id="toast"></div>
+
+<!-- ── EVENT MODAL ──────────────────────────────────────────────── -->
+<div class="modal-overlay" id="event-modal" onclick="if(event.target===this)closeEventModal()">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:520px">
+    <h3 id="event-modal-title">＋ Add Event</h3>
+    <div class="form-group">
+      <label>Event Title</label>
+      <input type="text" id="ev-title" placeholder="e.g. Visit Mabua Beach">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group">
+        <label>Date</label>
+        <input type="date" id="ev-date">
+      </div>
+      <div class="form-group">
+        <label>Time</label>
+        <input type="time" id="ev-time" value="08:00">
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group">
+        <label>Duration (minutes)</label>
+        <input type="number" id="ev-duration" value="60" min="15" step="15">
+      </div>
+      <div class="form-group">
+        <label>Event Type</label>
+        <select id="ev-type">
+          <option value="visit">🗺️ Site Visit</option>
+          <option value="hotel">🏨 Hotel / Stay</option>
+          <option value="leisure">🌅 Leisure</option>
+          <option value="transport">🚌 Transport</option>
+          <option value="meal">🍜 Meal</option>
+          <option value="other">📌 Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Linked Spot (optional)</label>
+      <select id="ev-spot">
+        <option value="">— None —</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Notes</label>
+      <textarea id="ev-notes" placeholder="Reminders, tips, directions..."></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeEventModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEvent()">Save Event</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── FEE MODAL ────────────────────────────────────────────────── -->
+<div class="modal-overlay" id="fee-modal" onclick="if(event.target===this)closeFeeModal()">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:520px">
+    <h3 id="fee-modal-title">＋ Add Fee Entry</h3>
+    <div class="form-group">
+      <label>Fee Name / Description</label>
+      <input type="text" id="fee-name" placeholder="e.g. Silop Cave Entrance Fee">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group">
+        <label>Amount per Person (₱)</label>
+        <input type="number" id="fee-amount" value="0" min="0" step="50">
+      </div>
+      <div class="form-group">
+        <label>Category</label>
+        <select id="fee-category">
+          <option value="entrance">🎟 Entrance Fee</option>
+          <option value="hotel">🏨 Hotel / Accommodation</option>
+          <option value="transport">🚌 Transport</option>
+          <option value="guide">👤 Guide Fee</option>
+          <option value="meal">🍜 Food & Drinks</option>
+          <option value="other">📌 Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Linked Spot (optional)</label>
+      <select id="fee-spot">
+        <option value="">— None —</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeFeeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveFeeEntry()">Save Fee</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── CORRECTED COORDINATES (verified via Google Maps / Google Places API) ───
+const DEFAULT_SPOTS = [
+  {
+    id: 's1', name: 'Mabua Pebble Beach',
+    desc: 'Sikat tungod kay imbis buhangin, puro puti kag hamis na bato. Relax kaayo ang lugar, bugnaw ang hangin, perfect para sa sunset views.',
+    tag: 'Nature', emoji: '🏖️', priority: 1,
+    lat: 9.8100385, lng: 125.4389845   // ✅ Google Places verified
+  },
+  {
+    id: 's2', name: 'Luneta Park',
+    desc: 'Paborito na tambayan sa Surigao. Peaceful sa adlaw, lively kag hayag sa gabii tungod sa mga suga kag mga tawo na nagalaag-laag.',
+    tag: 'Relaxation', emoji: '🌃', priority: 2,
+    lat: 9.7905416, lng: 125.4937515   // ✅ Google Places verified
+  },
+  {
+    id: 's3', name: 'Boulevard (Boule)',
+    desc: 'Ma-enjoy ang fresh air kag nindot na view sa dagat. Paborito para sa walking, kaon, kag tambay labi na sa hapon.',
+    tag: 'Relaxation', emoji: '🌊', priority: 3,
+    lat: 9.7901957, lng: 125.4930979   // ✅ Google Places verified
+  },
+  {
+    id: 's4', name: 'Cathedral of San Nicolas de Tolentino',
+    desc: 'Isa sa pinaka importante na simbahan sa Surigao. Hilom kag peaceful, makita diri ang kaanyag ng simbahan kag pagtuo ng mga Surigaonon. Founded 1754 by Augustinian Recollects.',
+    tag: 'Religious', emoji: '⛪', priority: 4,
+    lat: 9.7899094, lng: 125.4938238   // ✅ Google Places verified
+  },
+  {
+    id: 's5', name: 'Ipil Peak',
+    desc: 'Para sa mga hilig adventure! Makita ang nindot na view ng nature kag city sa itaas. Mabua/Malimono side para sa sunsets, Rizal side para sa sunrise. Presko ang hangin, worth it ang saka.',
+    tag: 'Adventure', emoji: '🏔️', priority: 5,
+    lat: 9.7791241, lng: 125.4467473   // ✅ Google Places verified
+  },
+  {
+    id: 's6', name: 'Silop Cave',
+    desc: 'Exciting na lugar nga makita ang natural rock formations sulod ng cave. Go to Silop Barangay Hall first to pay entrance (₱100/person) and get a guide. Perfect para sa mga ganahan mag-explore.',
+    tag: 'Adventure', emoji: '🦇', priority: 6,
+    lat: 9.7408151, lng: 125.5159409   // ✅ Google Places verified
+  },
+  {
+    id: 's7', name: 'Downtown Surigao',
+    desc: 'Sentro ng city. Mga tindahan, restaurants, kag busy na pangabuhi. Makita diri ang kasadya kag kabuhay ng Surigao City.',
+    tag: 'Urban', emoji: '🏙️', priority: 7,
+    lat: 9.7870, lng: 125.4980         // ✅ Surigao City center / market district
+  },
+  {
+    id: 's8', name: 'Surigao City Hall',
+    desc: 'Lugar kung diin nagutrabaho ang local government para sa mga tawo. Located along Rizal Street, infront of Rizal Park. Simbolo ng serbisyo kag pagtabang sa komunidad.',
+    tag: 'Government', emoji: '🏛️', priority: 8,
+    lat: 9.7913501, lng: 125.4933701   // ✅ Google Places verified
+  },
+  {
+    id: 's9', name: 'Surigao del Norte Provincial Capitol',
+    desc: 'Pinaka importante na building sa probinsya sa Capitol Road. Diri ginadumala ang mga programa kag serbisyo para sa Surigao del Norte. Daghan parking, may free WiFi.',
+    tag: 'Government', emoji: '🏛️', priority: 9,
+    lat: 9.7814513, lng: 125.4885908   // ✅ Google Places verified
+  },
+  {
+    id: 's10', name: 'PRISM',
+    desc: 'Provincial Research, Innovation, and Science Museum of Surigao del Norte. Located at Rizal cor. Peñaranda Sts. Open Mon–Fri, 8:30AM–5PM. The epicenter of learning, discovery, and innovation!',
+    tag: 'Science & Museum', emoji: '🔬', priority: 10,
+    lat: 9.7865494, lng: 125.4922695   // ✅ Google Places verified
+  },
+  {
+    id: 's11', name: 'Hotel Tavern Surigao',
+    desc: 'Best hotel in the area with an ocean view. Located along Borromeo St near the pier. Excellent accommodation, café Rosa serves great breakfast. Very accessible to the pier.',
+    tag: 'Accommodation', emoji: '🏨', priority: 11,
+    lat: 9.7852211, lng: 125.5002823   // ✅ Google Places verified
+  },
+];
+
+// ─── STATE ───────────────────────────────────────────────────
+let spots = [];
+let checked = {};
+let favorites = {};
+let starred = {};
+let priorityOrder = [];
+let editingId = null;
+let activeFilter = 'all';
+let selectedEmoji = '🏖️';
+// Schedule
+let schedule = [];
+let editingEventId = null;
+let calYear = new Date().getFullYear();
+let calMonth = new Date().getMonth();
+let calSelectedDate = null;
+// Fees
+let fees = [];
+let editingFeeId = null;
+
+function loadState() {
+  try {
+    // Always use fresh DEFAULT_SPOTS to get corrected coordinates
+    const saved = JSON.parse(localStorage.getItem('sg_spots'));
+    if (saved) {
+      // Merge saved user data (checked, fav, starred) with corrected coordinates
+      spots = DEFAULT_SPOTS.map(def => {
+        const s = saved.find(x => x.id === def.id);
+        // Keep the corrected lat/lng from DEFAULT_SPOTS; preserve user edits to name/desc/tag/emoji
+        return s ? { ...def, name: s.name, desc: s.desc, tag: s.tag, emoji: s.emoji } : def;
+      });
+      // Add any custom user-added spots that aren't in DEFAULT_SPOTS
+      saved.forEach(s => {
+        if (!DEFAULT_SPOTS.find(d => d.id === s.id)) spots.push(s);
+      });
+    } else {
+      spots = JSON.parse(JSON.stringify(DEFAULT_SPOTS));
+    }
+    checked = JSON.parse(localStorage.getItem('sg_checked')) || {};
+    favorites = JSON.parse(localStorage.getItem('sg_favorites')) || {};
+    starred = JSON.parse(localStorage.getItem('sg_starred')) || {};
+    priorityOrder = JSON.parse(localStorage.getItem('sg_priority')) || spots.map(s=>s.id);
+    spots.forEach(s => { if (!priorityOrder.includes(s.id)) priorityOrder.push(s.id); });
+    schedule = JSON.parse(localStorage.getItem('sg_schedule')) || [];
+    fees = JSON.parse(localStorage.getItem('sg_fees')) || [];
+  } catch(e) {
+    spots = JSON.parse(JSON.stringify(DEFAULT_SPOTS));
+    checked = {}; favorites = {}; starred = {};
+    priorityOrder = spots.map(s=>s.id);
+    schedule = []; fees = [];
+  }
+}
+
+function saveState() {
+  localStorage.setItem('sg_spots', JSON.stringify(spots));
+  localStorage.setItem('sg_checked', JSON.stringify(checked));
+  localStorage.setItem('sg_favorites', JSON.stringify(favorites));
+  localStorage.setItem('sg_starred', JSON.stringify(starred));
+  localStorage.setItem('sg_priority', JSON.stringify(priorityOrder));
+  localStorage.setItem('sg_schedule', JSON.stringify(schedule));
+  localStorage.setItem('sg_fees', JSON.stringify(fees));
+  // ── Sync to Firebase (non-blocking) ──
+  syncToFirebase();
+}
+
+function syncToFirebase() {
+  if (typeof firebase === 'undefined') return; // Firebase not configured yet
+  try {
+    firebase.database().ref('surigao_planner').set({
+      spots,
+      checked,
+      favorites,
+      starred,
+      priorityOrder,
+      schedule,
+      fees,
+      lastUpdated: Date.now()
+    });
+  } catch(e) {
+    console.warn('Firebase sync failed:', e);
+  }
+}
+
+// ─── RENDER ──────────────────────────────────────────────────
+function getPriorityLabel(id) {
+  const idx = priorityOrder.indexOf(id);
+  if (idx === 0) return '<span class="card-priority priority-1">🥇 Go First</span>';
+  if (idx === 1) return '<span class="card-priority priority-2">🥈 Second Stop</span>';
+  if (idx === 2) return '<span class="card-priority priority-3">🥉 Third Stop</span>';
+  if (starred[id]) return '<span class="card-priority priority-1">⭐ Starred</span>';
+  return `<span class="card-priority priority-custom">Stop #${idx+1}</span>`;
+}
+
+function renderSpotCard(s) {
+  const isChecked = !!checked[s.id];
+  const isFav = !!favorites[s.id];
+  const isStar = !!starred[s.id];
+  return `
+  <div class="spot-card${isChecked?' checked':''}${isFav?' favorited':''}" id="card-${s.id}" style="animation-delay:${Math.random()*0.15}s">
+    <div class="fav-ribbon">Fave</div>
+    <div class="card-top">
+      <div class="card-emoji">${s.emoji}</div>
+      <div class="card-actions">
+        <button class="icon-btn${isStar?' star-active':''}" title="Star (priority)" onclick="toggleStar('${s.id}')">⭐</button>
+        <button class="icon-btn${isFav?' fav-active':''}" title="Favorite" onclick="toggleFav('${s.id}')">♥</button>
+        <button class="icon-btn" title="Edit spot" onclick="openModal('${s.id}')">✏️</button>
+        <button class="icon-btn" title="Delete" onclick="deleteSpot('${s.id}')">🗑</button>
+      </div>
+    </div>
+    <div class="card-body">
+      ${getPriorityLabel(s.id)}
+      <div class="card-name">
+        ${s.name}
+        <span class="checked-badge">Visited!</span>
+      </div>
+      <p class="card-desc">${s.desc}</p>
+      <div class="card-footer">
+        <span class="tag">${s.tag}</span>
+        <div class="check-wrap">
+          <input type="checkbox" id="chk-${s.id}" ${isChecked?'checked':''} onchange="toggleCheck('${s.id}',this)">
+          <label for="chk-${s.id}">${isChecked?'Visited':'Mark visited'}</label>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function getFilteredSpots() {
+  if (activeFilter === 'visited') return spots.filter(s=>checked[s.id]);
+  if (activeFilter === 'unvisited') return spots.filter(s=>!checked[s.id]);
+  if (activeFilter === 'favorites') return spots.filter(s=>favorites[s.id]);
+  return spots;
+}
+
+function renderAll() {
+  updateStats();
+  renderGrid();
+  renderPriority();
+  renderFavorites();
+  renderMapList();
+  if (leafletMap) renderMap();
+  renderSchedule();
+  renderFees();
+}
+
+function renderGrid() {
+  const grid = document.getElementById('spots-grid');
+  const filtered = getFilteredSpots();
+  const ordered = [...filtered].sort((a,b) => {
+    const ai = priorityOrder.indexOf(a.id), bi = priorityOrder.indexOf(b.id);
+    return (ai===-1?999:ai) - (bi===-1?999:bi);
+  });
+  grid.innerHTML = ordered.length ? ordered.map(renderSpotCard).join('') :
+    '<div class="empty-state"><div class="empty-icon">🔍</div><h4>No spots found</h4><p>Try a different filter</p></div>';
+}
+
+function renderPriority() {
+  const list = document.getElementById('priority-list');
+  const ordered = priorityOrder
+    .map(id => spots.find(s=>s.id===id))
+    .filter(Boolean);
+  list.innerHTML = ordered.map((s,i) => {
+    const rankClass = i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'rank-rest';
+    const isChecked = !!checked[s.id];
+    return `
+    <div class="priority-item" id="pri-${s.id}">
+      <div class="priority-rank ${rankClass}">${i+1}</div>
+      <div style="font-size:1.6rem">${s.emoji}</div>
+      <div class="priority-info">
+        <strong>${s.name}${starred[s.id]?' ⭐':''}</strong>
+        <span>${s.tag} · ${isChecked?'✅ Visited':'🔲 Not yet visited'}</span>
+      </div>
+      <div class="priority-move">
+        <button class="move-btn" onclick="movePriority('${s.id}',-1)" ${i===0?'disabled':''}>▲</button>
+        <button class="move-btn" onclick="movePriority('${s.id}',1)" ${i===ordered.length-1?'disabled':''}>▼</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderFavorites() {
+  const grid = document.getElementById('fav-grid');
+  const favs = spots.filter(s=>favorites[s.id]);
+  grid.innerHTML = favs.length ? favs.map(renderSpotCard).join('') :
+    `<div class="empty-state" style="grid-column:1/-1">
+      <div class="empty-icon">❤️</div>
+      <h4>No favorites yet</h4>
+      <p>Tap the ♥ on any spot to add it here</p>
+    </div>`;
+}
+
+function renderMapList() {
+  const list = document.getElementById('map-spots-list');
+  const ordered = priorityOrder.map(id=>spots.find(s=>s.id===id)).filter(Boolean);
+  list.innerHTML = ordered.map((s,i)=>{
+    const isV = !!checked[s.id];
+    return `<div class="map-spot-chip${isV?' chip-visited':''}" onclick="focusMapSpot('${s.id}')">
+      <span class="spot-emoji">${s.emoji}</span>
+      <span>${s.name}</span>
+      <span class="chip-num${isV?' chip-done':''}">${i+1}</span>
+    </div>`;
+  }).join('');
+}
+
+// ─── LEAFLET MAP ──────────────────────────────────────────────
+let leafletMap = null;
+let mapMarkers = {};
+let routeLines = [];
+
+function initMap() {
+  if (leafletMap) return;
+  leafletMap = L.map('leaflet-map', { zoomControl: true }).setView([9.7868, 125.4944], 13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a> contributors',
+    maxZoom: 19
+  }).addTo(leafletMap);
+}
+
+function makeMarkerIcon(s, rank, isVisited) {
+  const checkHtml = isVisited
+    ? `<div class="marker-check">✓</div>`
+    : `<div class="marker-num">${rank}</div>`;
+  const visitedClass = isVisited ? ' visited' : '';
+  return L.divIcon({
+    className: '',
+    html: `<div class="spot-marker">
+      <div class="marker-bubble${visitedClass}">
+        <span class="marker-emoji">${s.emoji}</span>
+        ${checkHtml}
+      </div>
+    </div>`,
+    iconSize: [44, 52],
+    iconAnchor: [22, 52],
+    popupAnchor: [0, -54]
+  });
+}
+
+function renderMap() {
+  if (!leafletMap) initMap();
+  Object.values(mapMarkers).forEach(m => leafletMap.removeLayer(m));
+  mapMarkers = {};
+  routeLines.forEach(l => leafletMap.removeLayer(l));
+  routeLines = [];
+
+  const ordered = priorityOrder.map(id=>spots.find(s=>s.id===id)).filter(s=>s&&s.lat&&s.lng);
+  if (!ordered.length) return;
+
+  for (let i = 0; i < ordered.length - 1; i++) {
+    const a = ordered[i], b = ordered[i+1];
+    const bothVisited = checked[a.id] && checked[b.id];
+    const aVisited = checked[a.id];
+    const line = L.polyline(
+      [[a.lat, a.lng],[b.lat, b.lng]],
+      {
+        color: bothVisited ? '#2eaa6a' : aVisited ? '#f4c430' : '#0a3d62',
+        weight: bothVisited ? 4 : 3,
+        opacity: bothVisited ? 0.9 : 0.45,
+        dashArray: bothVisited ? null : '8, 8'
+      }
+    ).addTo(leafletMap);
+    routeLines.push(line);
+  }
+
+  ordered.forEach((s, i) => {
+    const isV = !!checked[s.id];
+    const icon = makeMarkerIcon(s, i+1, isV);
+    const marker = L.marker([s.lat, s.lng], { icon })
+      .addTo(leafletMap)
+      .bindPopup(`
+        <div class="map-popup">
+          <div class="map-popup-emoji">${s.emoji}</div>
+          <h4>${s.name}</h4>
+          <span class="map-popup-badge">#${i+1} · ${s.tag}</span>
+          <p>${s.desc.substring(0,120)}${s.desc.length>120?'…':''}</p>
+          ${isV ? '<div class="map-popup-visited">✅ Visited!</div>' : ''}
+        </div>
+      `, { maxWidth: 240 });
+    mapMarkers[s.id] = marker;
+  });
+
+  const latlngs = ordered.map(s=>[s.lat,s.lng]);
+  leafletMap.fitBounds(L.latLngBounds(latlngs).pad(0.18));
+  setTimeout(()=>leafletMap.invalidateSize(), 100);
+}
+
+function focusMapSpot(id) {
+  switchTab('map', document.querySelectorAll('.tab-btn')[3]);
+  setTimeout(() => {
+    const s = spots.find(x=>x.id===id);
+    if (!s || !s.lat) return;
+    leafletMap.setView([s.lat, s.lng], 16, { animate: true });
+    if (mapMarkers[id]) mapMarkers[id].openPopup();
+  }, 150);
+}
+
+function updateStats() {
+  const total = spots.length;
+  const visited = spots.filter(s=>checked[s.id]).length;
+  const favCount = spots.filter(s=>favorites[s.id]).length;
+  document.getElementById('total-count').textContent = total;
+  document.getElementById('visited-count').textContent = visited;
+  document.getElementById('fav-count').textContent = favCount;
+  document.getElementById('progress-label').textContent = `${visited} of ${total} visited`;
+  const pct = total ? Math.round(visited/total*100) : 0;
+  document.getElementById('progress-bar').style.width = pct+'%';
+  document.getElementById('progress-pct').textContent = pct+'%';
+}
+
+// ─── INTERACTIONS ─────────────────────────────────────────────
+function toggleCheck(id, el) {
+  checked[id] = el.checked;
+  saveState();
+  renderAll();
+  showToast(el.checked ? '✅ Marked as visited!' : '🔲 Unmarked');
+}
+
+function toggleFav(id) {
+  favorites[id] = !favorites[id];
+  saveState();
+  renderAll();
+  showToast(favorites[id] ? '❤️ Added to favorites!' : '💔 Removed from favorites');
+}
+
+function toggleStar(id) {
+  starred[id] = !starred[id];
+  saveState();
+  if (starred[id]) {
+    priorityOrder = [id, ...priorityOrder.filter(x=>x!==id)];
+    saveState();
+  }
+  renderAll();
+  showToast(starred[id] ? '⭐ Starred! Moved to top priority.' : '✦ Unstarred');
+}
+
+function deleteSpot(id) {
+  if (!confirm('Remove this spot from your planner?')) return;
+  spots = spots.filter(s=>s.id!==id);
+  priorityOrder = priorityOrder.filter(x=>x!==id);
+  delete checked[id]; delete favorites[id]; delete starred[id];
+  saveState();
+  renderAll();
+  showToast('🗑 Spot removed');
+}
+
+function movePriority(id, dir) {
+  const i = priorityOrder.indexOf(id);
+  const j = i + dir;
+  if (j < 0 || j >= priorityOrder.length) return;
+  [priorityOrder[i], priorityOrder[j]] = [priorityOrder[j], priorityOrder[i]];
+  saveState();
+  renderAll();
+}
+
+function autoSortPriority() {
+  priorityOrder.sort((a,b) => {
+    const sa = starred[a]?0:1, sb = starred[b]?0:1;
+    if (sa!==sb) return sa-sb;
+    const ca = checked[a]?1:0, cb = checked[b]?1:0;
+    return ca-cb;
+  });
+  saveState();
+  renderAll();
+  showToast('✨ Priority sorted by stars!');
+}
+
+// ─── MODAL ───────────────────────────────────────────────────
+function openModal(id=null) {
+  editingId = id;
+  selectedEmoji = '🏖️';
+  document.querySelectorAll('.emoji-opt').forEach(e=>e.classList.remove('selected'));
+  document.querySelector('.emoji-opt').classList.add('selected');
+  if (id) {
+    const s = spots.find(x=>x.id===id);
+    document.getElementById('modal-title').textContent = '✏️ Edit Spot';
+    document.getElementById('inp-name').value = s.name;
+    document.getElementById('inp-desc').value = s.desc;
+    document.getElementById('inp-tag').value = s.tag;
+    selectedEmoji = s.emoji;
+    document.querySelectorAll('.emoji-opt').forEach(e=>{
+      if(e.textContent===s.emoji){e.classList.add('selected');}
+    });
+  } else {
+    document.getElementById('modal-title').textContent = '＋ Add New Spot';
+    document.getElementById('inp-name').value='';
+    document.getElementById('inp-desc').value='';
+    document.getElementById('inp-tag').value='Nature';
+  }
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+function handleModalClick(e) { if(e.target===e.currentTarget) closeModal(); }
+
+function selectEmoji(el) {
+  document.querySelectorAll('.emoji-opt').forEach(e=>e.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedEmoji = el.textContent;
+}
+
+function saveSpot() {
+  const name = document.getElementById('inp-name').value.trim();
+  const desc = document.getElementById('inp-desc').value.trim();
+  const tag  = document.getElementById('inp-tag').value;
+  if (!name) { showToast('⚠️ Please enter a spot name'); return; }
+  if (editingId) {
+    const s = spots.find(x=>x.id===editingId);
+    s.name=name; s.desc=desc; s.tag=tag; s.emoji=selectedEmoji;
+  } else {
+    const id = 'c'+Date.now();
+    spots.push({ id, name, desc, tag, emoji: selectedEmoji, priority: spots.length+1 });
+    priorityOrder.push(id);
+  }
+  saveState();
+  renderAll();
+  closeModal();
+  showToast('🎉 Spot saved!');
+}
+
+// ─── TABS ─────────────────────────────────────────────────────
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  btn.classList.add('active');
+  renderAll();
+  if (name === 'map') {
+    setTimeout(() => {
+      if (!leafletMap) initMap();
+      renderMap();
+      leafletMap.invalidateSize();
+    }, 80);
+  }
+  if (name === 'schedule') renderCalendar();
+}
+
+// ─── FILTER ───────────────────────────────────────────────────
+function setFilter(f, el) {
+  activeFilter = f;
+  document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  renderGrid();
+}
+
+// ─── TOAST ───────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(()=>t.classList.remove('show'), 2600);
+}
+
+// ─── SCHEDULE ────────────────────────────────────────────────
+const TYPE_COLORS = { visit:'dot-visit', hotel:'dot-hotel', leisure:'dot-leisure', transport:'dot-transport', meal:'dot-meal', other:'dot-other' };
+const TYPE_LABELS = { visit:'🗺️ Site Visit', hotel:'🏨 Hotel', leisure:'🌅 Leisure', transport:'🚌 Transport', meal:'🍜 Meal', other:'📌 Other' };
+
+function renderSchedule() {
+  renderCalendar();
+  renderUpcoming();
+}
+
+function renderCalendar() {
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  document.getElementById('cal-month-label').textContent = months[calMonth] + ' ' + calYear;
+
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  const daysInPrev = new Date(calYear, calMonth, 0).getDate();
+  const today = new Date();
+
+  let html = days.map(d=>`<div class="cal-day-label">${d}</div>`).join('');
+
+  // Event lookup by date
+  const evByDate = {};
+  schedule.forEach(ev => { (evByDate[ev.date] = evByDate[ev.date]||[]).push(ev); });
+
+  // Previous month cells
+  for (let i = 0; i < firstDay; i++) {
+    const d = daysInPrev - firstDay + i + 1;
+    const dateStr = `${calYear}-${String(calMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    html += `<div class="cal-cell other-month" onclick="selectCalDate('${dateStr}')">
+      <div class="cal-date">${d}</div></div>`;
+  }
+
+  // Current month cells
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday = today.getFullYear()===calYear && today.getMonth()===calMonth && today.getDate()===d;
+    const isSelected = calSelectedDate === dateStr;
+    const evs = evByDate[dateStr] || [];
+    const dots = evs.map(ev=>`<span class="cal-dot ${TYPE_COLORS[ev.type]||'dot-other'}"></span>`).join('');
+    html += `<div class="cal-cell${isToday?' today':''}${isSelected?' selected':''}" onclick="selectCalDate('${dateStr}')">
+      <div class="cal-date">${d}</div>
+      <div class="cal-dots">${dots}</div>
+    </div>`;
+  }
+
+  // Next month fill
+  const total = firstDay + daysInMonth;
+  const remainder = total % 7 === 0 ? 0 : 7 - (total % 7);
+  for (let d = 1; d <= remainder; d++) {
+    const m = calMonth+2 > 12 ? 1 : calMonth+2;
+    const y = calMonth+2 > 12 ? calYear+1 : calYear;
+    const dateStr = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    html += `<div class="cal-cell other-month" onclick="selectCalDate('${dateStr}')">
+      <div class="cal-date">${d}</div></div>`;
+  }
+
+  document.getElementById('cal-grid').innerHTML = html;
+  renderSelectedDay();
+}
+
+function selectCalDate(dateStr) {
+  calSelectedDate = calSelectedDate === dateStr ? null : dateStr;
+  renderCalendar();
+}
+
+function renderSelectedDay() {
+  const el = document.getElementById('cal-selected-day');
+  if (!calSelectedDate) { el.innerHTML = ''; return; }
+  const evs = schedule.filter(ev=>ev.date===calSelectedDate).sort((a,b)=>a.time.localeCompare(b.time));
+  const d = new Date(calSelectedDate+'T00:00:00');
+  const label = d.toLocaleDateString('en-PH',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  const evHtml = evs.length ? evs.map(ev=>renderEventItem(ev)).join('') :
+    '<p style="font-size:13px;color:var(--muted);padding:12px 0">No events on this day. Click ＋ Add Event to schedule one.</p>';
+  el.innerHTML = `
+    <div class="cal-selected-title">
+      <span>📅 ${label}</span>
+      <button class="btn btn-primary" style="font-size:12px;padding:7px 14px" onclick="openEventModal(null,'${calSelectedDate}')">＋ Add</button>
+    </div>
+    <div class="event-list">${evHtml}</div>`;
+}
+
+function renderEventItem(ev) {
+  const spot = spots.find(s=>s.id===ev.spotId);
+  const dur = ev.duration ? `${ev.duration} min` : '';
+  return `<div class="event-item type-${ev.type||'other'}">
+    <div class="event-time">${ev.time||''}</div>
+    <div class="event-body">
+      <div class="event-title">${ev.title}</div>
+      <div class="event-meta">
+        ${spot?`${spot.emoji} ${spot.name} · `:''}${TYPE_LABELS[ev.type]||'Other'}${dur?' · '+dur:''}
+      </div>
+      ${ev.notes?`<div class="event-notes">💬 ${ev.notes}</div>`:''}
+    </div>
+    <div class="event-actions">
+      <button class="icon-btn" title="Edit" onclick="openEventModal('${ev.id}')">✏️</button>
+      <button class="icon-btn" title="Delete" onclick="deleteEvent('${ev.id}')">🗑</button>
+    </div>
+  </div>`;
+}
+
+function renderUpcoming() {
+  const today = new Date().toISOString().slice(0,10);
+  const upcoming = schedule
+    .filter(ev=>ev.date>=today)
+    .sort((a,b)=>a.date.localeCompare(b.date)||a.time.localeCompare(b.time))
+    .slice(0,10);
+
+  const el = document.getElementById('upcoming-list');
+  if (!upcoming.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">📅</div><h4>No upcoming events</h4><p>Add events to your schedule above</p></div>`;
+    return;
+  }
+  el.innerHTML = upcoming.map(ev => {
+    const spot = spots.find(s=>s.id===ev.spotId);
+    const d = new Date(ev.date+'T00:00:00');
+    const month = d.toLocaleDateString('en',{month:'short'}).toUpperCase();
+    const day = d.getDate();
+    return `<div class="upcoming-item">
+      <div class="upcoming-date-box">
+        <div class="upcoming-month">${month}</div>
+        <div class="upcoming-day">${day}</div>
+      </div>
+      <div class="upcoming-info">
+        <div class="upcoming-title">${ev.title}</div>
+        <div class="upcoming-meta">${ev.time} · ${TYPE_LABELS[ev.type]||''}${spot?' · '+spot.emoji+' '+spot.name:''}</div>
+        ${ev.notes?`<div style="font-size:11.5px;color:var(--muted);margin-top:3px;font-style:italic">💬 ${ev.notes}</div>`:''}
+      </div>
+      <div class="event-actions">
+        <button class="icon-btn" title="Edit" onclick="openEventModal('${ev.id}')">✏️</button>
+        <button class="icon-btn" title="Delete" onclick="deleteEvent('${ev.id}')">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function calNav(dir) {
+  calMonth += dir;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  renderCalendar();
+}
+
+// Event Modal
+function openEventModal(id=null, prefillDate=null) {
+  editingEventId = id;
+  // Populate spot dropdown
+  const sel = document.getElementById('ev-spot');
+  sel.innerHTML = '<option value="">— None —</option>' + spots.map(s=>`<option value="${s.id}">${s.emoji} ${s.name}</option>`).join('');
+
+  if (id) {
+    const ev = schedule.find(e=>e.id===id);
+    document.getElementById('event-modal-title').textContent = '✏️ Edit Event';
+    document.getElementById('ev-title').value = ev.title;
+    document.getElementById('ev-date').value = ev.date;
+    document.getElementById('ev-time').value = ev.time;
+    document.getElementById('ev-duration').value = ev.duration;
+    document.getElementById('ev-type').value = ev.type||'visit';
+    document.getElementById('ev-spot').value = ev.spotId||'';
+    document.getElementById('ev-notes').value = ev.notes||'';
+  } else {
+    document.getElementById('event-modal-title').textContent = '＋ Add Event';
+    document.getElementById('ev-title').value='';
+    document.getElementById('ev-date').value = prefillDate || new Date().toISOString().slice(0,10);
+    document.getElementById('ev-time').value='08:00';
+    document.getElementById('ev-duration').value='60';
+    document.getElementById('ev-type').value='visit';
+    document.getElementById('ev-spot').value='';
+    document.getElementById('ev-notes').value='';
+  }
+  document.getElementById('event-modal').classList.add('open');
+}
+
+function closeEventModal() { document.getElementById('event-modal').classList.remove('open'); }
+
+function saveEvent() {
+  const title = document.getElementById('ev-title').value.trim();
+  const date  = document.getElementById('ev-date').value;
+  const time  = document.getElementById('ev-time').value;
+  if (!title) { showToast('⚠️ Please enter an event title'); return; }
+  if (!date)  { showToast('⚠️ Please pick a date'); return; }
+  const ev = {
+    title,
+    date,
+    time,
+    duration: parseInt(document.getElementById('ev-duration').value)||60,
+    type: document.getElementById('ev-type').value,
+    spotId: document.getElementById('ev-spot').value||null,
+    notes: document.getElementById('ev-notes').value.trim()
+  };
+  if (editingEventId) {
+    const idx = schedule.findIndex(e=>e.id===editingEventId);
+    schedule[idx] = { ...schedule[idx], ...ev };
+  } else {
+    ev.id = 'ev'+Date.now();
+    schedule.push(ev);
+  }
+  saveState();
+  renderSchedule();
+  calSelectedDate = date;
+  renderCalendar();
+  closeEventModal();
+  showToast('📅 Event saved!');
+}
+
+function deleteEvent(id) {
+  if (!confirm('Remove this event?')) return;
+  schedule = schedule.filter(e=>e.id!==id);
+  saveState();
+  renderSchedule();
+  renderCalendar();
+  showToast('🗑 Event removed');
+}
+
+// ─── FEES ────────────────────────────────────────────────────
+const FEE_CAT_ICONS = { entrance:'🎟', hotel:'🏨', transport:'🚌', guide:'👤', meal:'🍜', other:'📌' };
+
+function renderFees() {
+  // Summary stats
+  let totalAmt=0, totalPaid=0, totalPayers=0, paidPayers=0;
+  fees.forEach(f=>{
+    (f.payers||[]).forEach(p=>{
+      totalPayers++;
+      totalAmt += f.amount||0;
+      if (p.paid) { paidPayers++; totalPaid += f.amount||0; }
+    });
+  });
+  const outstanding = totalAmt - totalPaid;
+
+  document.getElementById('fee-summary').innerHTML = `
+    <div class="fee-stat-card">
+      <span class="fee-stat-num">₱${totalAmt.toLocaleString()}</span>
+      <span class="fee-stat-label">Total Fees</span>
+    </div>
+    <div class="fee-stat-card paid">
+      <span class="fee-stat-num">₱${totalPaid.toLocaleString()}</span>
+      <span class="fee-stat-label">Collected</span>
+    </div>
+    <div class="fee-stat-card outstanding">
+      <span class="fee-stat-num">₱${outstanding.toLocaleString()}</span>
+      <span class="fee-stat-label">Outstanding</span>
+    </div>
+    <div class="fee-stat-card">
+      <span class="fee-stat-num">${paidPayers}/${totalPayers}</span>
+      <span class="fee-stat-label">Payers Done</span>
+    </div>`;
+
+  const el = document.getElementById('fee-entries-list');
+  if (!fees.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">💰</div><h4>No fee entries yet</h4><p>Add fees for hotels, entrances, guides, etc.</p></div>`;
+    return;
+  }
+
+  el.innerHTML = fees.map(f=>{
+    const spot = spots.find(s=>s.id===f.spotId);
+    const payers = f.payers||[];
+    const paidCount = payers.filter(p=>p.paid).length;
+    const pct = payers.length ? Math.round(paidCount/payers.length*100) : 0;
+    const catIcon = FEE_CAT_ICONS[f.category]||'📌';
+
+    const payerRows = payers.map(p=>`
+      <div class="payer-row${p.paid?' paid':''}" id="prow-${p.id}">
+        <div class="payer-avatar">${(p.name||'?')[0].toUpperCase()}</div>
+        <div>
+          <div class="payer-name">${p.name}</div>
+          ${p.paid&&p.paidAt?`<div class="payer-paid-date">Paid ${new Date(p.paidAt).toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'})}</div>`:''}
+        </div>
+        <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
+          <button class="payer-status ${p.paid?'paid':'unpaid'}" onclick="togglePayerPaid('${f.id}','${p.id}')">
+            ${p.paid?'✅ Paid':'⏳ Unpaid'}
+          </button>
+          <button class="icon-btn" title="Edit name" onclick="editPayerName('${f.id}','${p.id}')">✏️</button>
+          <button class="icon-btn" title="Remove" onclick="removePayer('${f.id}','${p.id}')">🗑</button>
+        </div>
+      </div>`).join('');
+
+    return `<div class="fee-entry" id="fee-${f.id}">
+      <div class="fee-entry-header">
+        <div class="fee-entry-emoji">${catIcon}</div>
+        <div class="fee-entry-info">
+          <div class="fee-entry-name">${f.name}</div>
+          <div class="fee-entry-meta">${spot?spot.emoji+' '+spot.name+' · ':''}<strong>₱${(f.amount||0).toLocaleString()}/person</strong> · ${paidCount}/${payers.length} paid</div>
+        </div>
+        <div class="fee-amount">₱${((f.amount||0)*paidCount).toLocaleString()}</div>
+        <div class="fee-entry-actions">
+          <button class="icon-btn" title="Edit fee" onclick="openFeeModal('${f.id}')">✏️</button>
+          <button class="icon-btn" title="Delete" onclick="deleteFeeEntry('${f.id}')">🗑</button>
+        </div>
+      </div>
+      <div class="fee-progress">
+        <div class="fee-prog-bar-outer"><div class="fee-prog-bar-inner" style="width:${pct}%"></div></div>
+        <div class="fee-prog-label"><span>${paidCount} of ${payers.length} paid</span><span>${pct}%</span></div>
+      </div>
+      <div class="payer-list">${payerRows||'<p style="font-size:13px;color:var(--muted)">No payers yet. Add one below.</p>'}</div>
+      <div class="fee-add-payer">
+        <input type="text" id="new-payer-${f.id}" placeholder="Payer name (e.g. Juan)" onkeydown="if(event.key==='Enter')addPayer('${f.id}')">
+        <button class="btn btn-outline" style="white-space:nowrap" onclick="addPayer('${f.id}')">＋ Add Payer</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// Fee Modal
+function openFeeModal(id=null) {
+  editingFeeId = id;
+  const sel = document.getElementById('fee-spot');
+  sel.innerHTML = '<option value="">— None —</option>' + spots.map(s=>`<option value="${s.id}">${s.emoji} ${s.name}</option>`).join('');
+
+  if (id) {
+    const f = fees.find(x=>x.id===id);
+    document.getElementById('fee-modal-title').textContent = '✏️ Edit Fee';
+    document.getElementById('fee-name').value = f.name;
+    document.getElementById('fee-amount').value = f.amount||0;
+    document.getElementById('fee-category').value = f.category||'entrance';
+    document.getElementById('fee-spot').value = f.spotId||'';
+  } else {
+    document.getElementById('fee-modal-title').textContent = '＋ Add Fee Entry';
+    document.getElementById('fee-name').value='';
+    document.getElementById('fee-amount').value=0;
+    document.getElementById('fee-category').value='entrance';
+    document.getElementById('fee-spot').value='';
+  }
+  document.getElementById('fee-modal').classList.add('open');
+}
+
+function closeFeeModal() { document.getElementById('fee-modal').classList.remove('open'); }
+
+function saveFeeEntry() {
+  const name = document.getElementById('fee-name').value.trim();
+  if (!name) { showToast('⚠️ Enter a fee name'); return; }
+  const entry = {
+    name,
+    amount: parseFloat(document.getElementById('fee-amount').value)||0,
+    category: document.getElementById('fee-category').value,
+    spotId: document.getElementById('fee-spot').value||null
+  };
+  if (editingFeeId) {
+    const idx = fees.findIndex(x=>x.id===editingFeeId);
+    fees[idx] = { ...fees[idx], ...entry };
+  } else {
+    entry.id = 'fee'+Date.now();
+    entry.payers = [];
+    fees.push(entry);
+  }
+  saveState();
+  renderFees();
+  closeFeeModal();
+  showToast('💰 Fee saved!');
+}
+
+function deleteFeeEntry(id) {
+  if (!confirm('Delete this fee entry and all its payer data?')) return;
+  fees = fees.filter(f=>f.id!==id);
+  saveState();
+  renderFees();
+  showToast('🗑 Fee entry removed');
+}
+
+function addPayer(feeId) {
+  const inp = document.getElementById('new-payer-'+feeId);
+  const name = inp.value.trim();
+  if (!name) { showToast('⚠️ Enter a payer name'); return; }
+  const f = fees.find(x=>x.id===feeId);
+  if (!f.payers) f.payers = [];
+  f.payers.push({ id:'py'+Date.now(), name, paid:false, paidAt:null });
+  inp.value='';
+  saveState();
+  renderFees();
+  showToast('👤 Payer added!');
+}
+
+function togglePayerPaid(feeId, payerId) {
+  const f = fees.find(x=>x.id===feeId);
+  const p = (f.payers||[]).find(x=>x.id===payerId);
+  if (!p) return;
+  p.paid = !p.paid;
+  p.paidAt = p.paid ? Date.now() : null;
+  saveState();
+  renderFees();
+  showToast(p.paid ? '✅ Marked as paid!' : '⏳ Marked as unpaid');
+}
+
+function editPayerName(feeId, payerId) {
+  const f = fees.find(x=>x.id===feeId);
+  const p = (f.payers||[]).find(x=>x.id===payerId);
+  if (!p) return;
+  const newName = prompt('Edit payer name:', p.name);
+  if (!newName || !newName.trim()) return;
+  p.name = newName.trim();
+  saveState();
+  renderFees();
+  showToast('✏️ Name updated!');
+}
+
+function removePayer(feeId, payerId) {
+  if (!confirm('Remove this payer?')) return;
+  const f = fees.find(x=>x.id===feeId);
+  f.payers = (f.payers||[]).filter(p=>p.id!==payerId);
+  saveState();
+  renderFees();
+  showToast('🗑 Payer removed');
+}
+
+// ─── INIT ─────────────────────────────────────────────────────
+loadState();
+renderAll();
+</script>
+
+<!-- ═══ FIREBASE SYNC ════════════════════════════════════════════
+     🔴 REPLACE THE CONFIG BELOW WITH YOUR OWN FIREBASE CONFIG 🔴
+     After replacing, every Save action will sync to Firebase and
+     your Viewer site will update live for friends watching it.
+═══════════════════════════════════════════════════════════════ -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script>
-const firebaseConfig = {
+(function() {
+  const firebaseConfig = {
   apiKey: "AIzaSyAX57nI4NOu6jUHUFjPJfEMcMy879wQmYo",
   authDomain: "surigao-planner.firebaseapp.com",
   databaseURL: "https://surigao-planner-default-rtdb.asia-southeast1.firebasedatabase.app",
@@ -571,219 +2015,18 @@ const firebaseConfig = {
   appId: "1:782725848439:web:54e373188428ba3ab89572",
   measurementId: "G-LEB7J7ZTFG"
 };
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+  try {
+    firebase.initializeApp(firebaseConfig);
+    console.log('✅ Firebase connected. Planner will sync to Realtime Database.');
+    // Push current localStorage state immediately so viewer has fresh data
+    syncToFirebase();
+  } catch(e) {
+    console.warn('Firebase init failed — edit mode still works offline via localStorage.', e);
+  }
+})();
 </script>
 <!-- ════════════════════════════════════════════════════════════ -->
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script>
-// ─── STATE ───────────────────────────────────────────────────
-let spots = [], checked = {}, favorites = {}, starred = {}, priorityOrder = [];
-let viewerMap = null, mapMarkers = {}, routeLines = [];
-let firstLoad = true;
-
-// ─── FIREBASE LISTENER ────────────────────────────────────────
-db.ref('surigao_planner').on('value', snapshot => {
-  const data = snapshot.val();
-  if (!data) {
-    document.getElementById('error-state').style.display = 'block';
-    hideConnecting();
-    return;
-  }
-  spots        = data.spots        || [];
-  checked      = data.checked      || {};
-  favorites    = data.favorites    || {};
-  starred      = data.starred      || {};
-  priorityOrder= data.priorityOrder|| spots.map(s=>s.id);
-
-  // Ensure all spot ids are in priorityOrder
-  spots.forEach(s => { if (!priorityOrder.includes(s.id)) priorityOrder.push(s.id); });
-
-  renderAll();
-  hideConnecting();
-  document.getElementById('spots-section').style.display = 'block';
-  document.getElementById('priority-section').style.display = 'block';
-  document.getElementById('map-section').style.display = 'block';
-  document.getElementById('error-state').style.display = 'none';
-});
-
-function hideConnecting() {
-  const el = document.getElementById('connecting-screen');
-  el.classList.add('hidden');
-  setTimeout(() => el.style.display = 'none', 650);
-}
-
-// ─── RENDER ALL ───────────────────────────────────────────────
-function renderAll() {
-  updateStats();
-  renderGrid();
-  renderPriority();
-  renderMap();
-}
-
-// ─── STATS ────────────────────────────────────────────────────
-function updateStats() {
-  const total   = spots.length;
-  const visited = spots.filter(s => checked[s.id]).length;
-  const favs    = spots.filter(s => favorites[s.id]).length;
-  const pct     = total ? Math.round(visited / total * 100) : 0;
-
-  document.getElementById('stat-visited').textContent = visited;
-  document.getElementById('stat-total').textContent   = total;
-  document.getElementById('stat-favs').textContent    = favs;
-  document.getElementById('stat-pct').textContent     = pct + '%';
-  document.getElementById('stat-bar').style.width     = pct + '%';
-}
-
-// ─── SPOTS GRID ───────────────────────────────────────────────
-function renderGrid() {
-  const grid = document.getElementById('spots-grid');
-  document.getElementById('spots-count-label').textContent = spots.length + ' spots';
-
-  const ordered = priorityOrder
-    .map(id => spots.find(s => s.id === id))
-    .filter(Boolean);
-
-  grid.innerHTML = ordered.map((s, i) => {
-    const isV   = !!checked[s.id];
-    const isFav = !!favorites[s.id];
-    const isStar= !!starred[s.id];
-    const stopLabel = i === 0 ? '🥇 #1' : i === 1 ? '🥈 #2' : i === 2 ? '🥉 #3' : `#${i+1}`;
-    const isTop = i < 3;
-    return `
-    <div class="spot-card ${isV ? 'is-visited' : 'is-unvisited'}" style="animation-delay:${i*0.04}s">
-      <div class="card-inner">
-        <div class="card-row1">
-          <div class="card-emoji">${s.emoji}</div>
-          <div class="card-badges">
-            ${isV
-              ? `<span class="badge-visited">✅ Visited</span>`
-              : `<span class="badge-todo">🔲 To Visit</span>`
-            }
-            ${isFav ? `<span class="badge-fav">❤️ Favorite</span>` : ''}
-            <span class="badge-stop${isTop?' top':''}">${stopLabel}</span>
-          </div>
-        </div>
-        <div class="card-name">${s.name}</div>
-        <div class="card-desc">${s.desc}</div>
-        <span class="card-tag">${s.tag}</span>
-      </div>
-      <div class="card-check-bar"></div>
-    </div>`;
-  }).join('');
-}
-
-// ─── PRIORITY LIST ────────────────────────────────────────────
-function renderPriority() {
-  const list = document.getElementById('priority-list');
-  const ordered = priorityOrder
-    .map(id => spots.find(s => s.id === id))
-    .filter(Boolean);
-
-  list.innerHTML = ordered.map((s, i) => {
-    const isV = !!checked[s.id];
-    const rankClass = isV ? 'rank-done' : i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'rank-n';
-    return `
-    <div class="priority-row${isV?' is-visited':''}" style="animation-delay:${i*0.03}s">
-      <div class="rank-circle ${rankClass}">${isV ? '✓' : i+1}</div>
-      <div class="pr-emoji">${s.emoji}</div>
-      <div class="pr-info">
-        <strong class="pr-name">${s.name}${starred[s.id]?' ⭐':''}</strong>
-        <span class="pr-meta">${s.tag}</span>
-      </div>
-      <span class="pr-status ${isV?'done':'todo'}">${isV ? '✅ Done' : '🔲 Pending'}</span>
-    </div>`;
-  }).join('');
-}
-
-// ─── MAP ──────────────────────────────────────────────────────
-function renderMap() {
-  if (!viewerMap) {
-    viewerMap = L.map('viewer-map').setView([9.7868, 125.4944], 12);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>',
-      maxZoom: 19
-    }).addTo(viewerMap);
-  }
-
-  Object.values(mapMarkers).forEach(m => viewerMap.removeLayer(m));
-  mapMarkers = {};
-  routeLines.forEach(l => viewerMap.removeLayer(l));
-  routeLines = [];
-
-  const ordered = priorityOrder
-    .map(id => spots.find(s => s.id === id))
-    .filter(s => s && s.lat && s.lng);
-
-  if (!ordered.length) return;
-
-  // Route lines
-  for (let i = 0; i < ordered.length - 1; i++) {
-    const a = ordered[i], b = ordered[i+1];
-    const bothV = checked[a.id] && checked[b.id];
-    const aV    = checked[a.id];
-    const line = L.polyline([[a.lat, a.lng], [b.lat, b.lng]], {
-      color: bothV ? '#2eaa6a' : aV ? '#f4c430' : '#0a3d62',
-      weight: bothV ? 4 : 3,
-      opacity: bothV ? 0.9 : 0.4,
-      dashArray: bothV ? null : '8,8'
-    }).addTo(viewerMap);
-    routeLines.push(line);
-  }
-
-  // Markers
-  ordered.forEach((s, i) => {
-    const isV = !!checked[s.id];
-    const icon = L.divIcon({
-      className: '',
-      html: `<div class="spot-marker">
-        <div class="marker-bubble${isV?' visited':''}">
-          <span class="marker-emoji">${s.emoji}</span>
-          ${isV
-            ? `<div class="marker-check">✓</div>`
-            : `<div class="marker-num">${i+1}</div>`
-          }
-        </div>
-      </div>`,
-      iconSize: [44, 52], iconAnchor: [22, 52], popupAnchor: [0, -54]
-    });
-
-    const marker = L.marker([s.lat, s.lng], { icon })
-      .addTo(viewerMap)
-      .bindPopup(`
-        <div class="map-popup">
-          <div class="map-popup-emoji">${s.emoji}</div>
-          <h4>${s.name}</h4>
-          <p>#${i+1} · ${s.tag}<br>${s.desc.substring(0,100)}${s.desc.length>100?'…':''}</p>
-          ${isV ? '<div class="map-popup-visited">✅ Already visited!</div>' : ''}
-        </div>
-      `, { maxWidth: 240 });
-    mapMarkers[s.id] = marker;
-  });
-
-  // Chips
-  const chipsEl = document.getElementById('map-chips');
-  chipsEl.innerHTML = ordered.map((s, i) => {
-    const isV = !!checked[s.id];
-    return `<div class="map-chip${isV?' chip-done':''}" onclick="zoomTo('${s.id}')">
-      <span>${s.emoji}</span>
-      <span>${s.name}</span>
-      <span class="chip-rank${isV?' done':''}">${i+1}</span>
-    </div>`;
-  }).join('');
-
-  const latlngs = ordered.map(s => [s.lat, s.lng]);
-  viewerMap.fitBounds(L.latLngBounds(latlngs).pad(0.2));
-  setTimeout(() => viewerMap.invalidateSize(), 120);
-}
-
-function zoomTo(id) {
-  const s = spots.find(x => x.id === id);
-  if (!s || !s.lat) return;
-  viewerMap.setView([s.lat, s.lng], 16, { animate: true });
-  if (mapMarkers[id]) mapMarkers[id].openPopup();
-}
-</script>
 </body>
 </html>
