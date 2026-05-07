@@ -686,7 +686,7 @@
   .event-title { font-weight: 600; font-size: 14px; color: var(--text); margin-bottom: 3px; }
   .event-meta { font-size: 11.5px; color: var(--muted); }
   .event-notes { font-size: 12px; color: var(--muted); margin-top: 4px; font-style: italic; }
-  .event-actions { display: flex; gap: 4px; grid-column: 2 / 3; }
+  .event-actions { display: flex; gap: 4px; }
   .event-badge {
     display: inline-flex; align-items: center; gap: 4px;
     font-size: 10px; font-weight: 700; letter-spacing: 0.5px;
@@ -1437,15 +1437,13 @@ function renderSelectedDay() {
 function renderEventItem(ev) {
   const spot = spots.find(s=>s.id===ev.spotId);
   const dur = ev.duration ? `${(ev.duration / 60).toFixed(1)} hours` : '';
-  const status = ev.status || 'not_finished';
-  return `<div class="event-item type-${ev.type||'other'} ${status === 'finished' ? 'status-finished' : ''}>
+  return `<div class="event-item type-${ev.type||'other'}">
     <div class="event-time">${ev.time||''}</div>
     <div class="event-body">
       <div class="event-title">${ev.title}</div>
       <div class="event-meta">
         ${spot?`${spot.emoji} ${spot.name} · `:''}${TYPE_LABELS[ev.type]||'Other'}${dur?' · '+dur:''}
       </div>
-      ${getEventStatusBadge(status)}
       ${ev.notes?`<div class="event-notes">💬 ${ev.notes}</div>`:''}
     </div>
   </div>`;

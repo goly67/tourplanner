@@ -1277,7 +1277,6 @@
       margin-top: 10px;
       display: flex;
       gap: 8px;
-      grid-column: 2 / 3;
     }
 
     .event-status {
@@ -2370,20 +2369,18 @@
     function renderEventItem(ev) {
       const spot = spots.find(s => s.id === ev.spotId);
       const dur = ev.duration ? `${(ev.duration / 60).toFixed(1)} hours` : '';
-      const status = ev.status || 'not_finished';
-      return `<div class="event-item type-${ev.type || 'other'} ${status === 'finished' ? 'status-finished' : ''}>
+      return `<div class="event-item type-${ev.type || 'other'}">
     <div class="event-time">${ev.time || ''}</div>
     <div class="event-body">
       <div class="event-title">${ev.title}</div>
       <div class="event-meta">
         ${spot ? `${spot.emoji} ${spot.name} · ` : ''}${TYPE_LABELS[ev.type] || 'Other'}${dur ? ' · ' + dur : ''}
       </div>
-      ${getEventStatusBadge(status)}
       ${ev.notes ? `<div class="event-notes">💬 ${ev.notes}</div>` : ''}
-    </div>
-    <div class="event-actions">
-      <button class="icon-btn" title="Edit" onclick="openEventModal('${ev.id}')">✏️</button>
-      <button class="icon-btn" title="Delete" onclick="deleteEvent('${ev.id}')">🗑</button>
+      <div class="event-actions">
+        <button class="icon-btn" title="Edit" onclick="openEventModal('${ev.id}')">✏️</button>
+        <button class="icon-btn" title="Delete" onclick="deleteEvent('${ev.id}')">🗑</button>
+      </div>
     </div>
   </div>`;
     }
