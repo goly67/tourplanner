@@ -351,7 +351,6 @@
     display: flex; align-items: center; gap: 14px;
     border: 1.5px solid rgba(255,255,255,0.8);
     transition: all 0.2s;
-    cursor: grab;
     animation: cardIn 0.35s ease both;
   }
   .priority-item:hover { transform: translateX(4px); }
@@ -800,8 +799,11 @@
   <div class="header-inner">
     <div class="header-deco"></div>
     <span class="header-badge">🌊 Surigao del Norte</span>
-    <h1>Surigao City<br><span>Tour Planner</span></h1>
-    <p class="header-sub">Maayong adlaw! Plan your perfect Surigao adventure ✨</p>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:0">
+      <h1 style="margin-bottom:0">Surigao City<br><span>Tour Viewer</span></h1>
+      <span style="background:rgba(255,255,255,0.18);border:1.5px solid rgba(255,255,255,0.4);color:white;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:5px 13px;border-radius:30px;white-space:nowrap;backdrop-filter:blur(8px);align-self:flex-start;margin-top:8px">👁 View Only</span>
+    </div>
+    <p class="header-sub">Maayong adlaw! Your Surigao adventure at a glance ✨</p>
     <div class="header-stats">
       <div class="stat">
         <span class="stat-num" id="total-count">11</span>
@@ -843,7 +845,6 @@
       <span class="filter-chip" onclick="setFilter('visited',this)">✅ Visited</span>
       <span class="filter-chip" onclick="setFilter('unvisited',this)">🔲 To Visit</span>
       <span class="filter-chip" onclick="setFilter('favorites',this)">❤️ Favorites</span>
-      <button class="btn btn-primary" onclick="openModal()">＋ Add Spot</button>
     </div>
     <div class="spots-grid" id="spots-grid"></div>
   </div>
@@ -851,9 +852,8 @@
   <div class="tab-content" id="tab-priority">
     <div class="toolbar">
       <span class="toolbar-title">Visit Priority</span>
-      <button class="btn btn-outline" onclick="autoSortPriority()">✨ Auto-sort by Stars</button>
     </div>
-    <p style="font-size:13px;color:var(--muted);margin-bottom:18px;">Use the arrows to reorder your itinerary. ⭐ starred spots appear first.</p>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:18px;">Spots ordered by visit priority. ⭐ starred spots appear first.</p>
     <div class="priority-list" id="priority-list"></div>
   </div>
 
@@ -885,7 +885,6 @@
   <div class="tab-content" id="tab-schedule">
     <div class="toolbar">
       <span class="toolbar-title">📅 Schedule & Calendar</span>
-      <button class="btn btn-primary" onclick="openEventModal()">＋ Add Event</button>
     </div>
 
     <!-- Calendar widget -->
@@ -910,7 +909,6 @@
   <div class="tab-content" id="tab-fees">
     <div class="toolbar">
       <span class="toolbar-title">💰 Fee Monitoring</span>
-      <button class="btn btn-primary" onclick="openFeeModal()">＋ Add Fee Entry</button>
     </div>
 
     <!-- Summary stats -->
@@ -922,149 +920,7 @@
 
 </main>
 
-<div class="modal-overlay" id="modal" onclick="handleModalClick(event)">
-  <div class="modal" onclick="event.stopPropagation()">
-    <h3 id="modal-title">＋ Add New Spot</h3>
-    <div class="form-group">
-      <label>Spot Name</label>
-      <input type="text" id="inp-name" placeholder="e.g. Mabua Pebble Beach">
-    </div>
-    <div class="form-group">
-      <label>Description</label>
-      <textarea id="inp-desc" placeholder="Describe this place..."></textarea>
-    </div>
-    <div class="form-group">
-      <label>Category Tag</label>
-      <select id="inp-tag">
-        <option>Nature</option>
-        <option>Heritage</option>
-        <option>Adventure</option>
-        <option>Relaxation</option>
-        <option>Cultural</option>
-        <option>Religious</option>
-        <option>Science & Museum</option>
-        <option>Food & Entertainment</option>
-        <option>Urban</option>
-        <option>Accommodation</option>
-        <option>Government</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label>Pick an Emoji</label>
-      <div class="emoji-picker">
-        <span class="emoji-opt selected" onclick="selectEmoji(this)">🏖️</span>
-        <span class="emoji-opt" onclick="selectEmoji(this)">🌊</span>
-        <span class="emoji-opt" onclick="selectEmoji(this)">🏔️</span>
-        <span class="emoji-opt" onclick="selectEmoji(this)">⛪</span>
-        <span class="emoji-opt" onclick="selectEmoji(this)">🏛️</span>
-        <span class="emoji-opt" onclick="selectEmoji(this)">🦇</span>
-        <span class="emoji-opt" onclick="selectEmoji(this)">🔬</span>
-        <span class="emoji-opt" onclick="selectEmoji(this)">🏙️</span>
-        <span class="emoji-opt" onclick="selectEmoji(this)">🍜</span>
-        <span class="emoji-opt" onclick="selectEmoji(this)">🏨</span>
-        <span class="emoji-opt" onclick="selectEmoji(this)">🎡</span>
-        <span class="emoji-opt" onclick="selectEmoji(this)">🌺</span>
-        <span class="emoji-opt" onclick="selectEmoji(this)">📸</span>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="saveSpot()">Save Spot</button>
-    </div>
-  </div>
-</div>
-
 <div class="toast" id="toast"></div>
-
-<!-- ── EVENT MODAL ──────────────────────────────────────────────── -->
-<div class="modal-overlay" id="event-modal" onclick="if(event.target===this)closeEventModal()">
-  <div class="modal" onclick="event.stopPropagation()" style="max-width:520px">
-    <h3 id="event-modal-title">＋ Add Event</h3>
-    <div class="form-group">
-      <label>Event Title</label>
-      <input type="text" id="ev-title" placeholder="e.g. Visit Mabua Beach">
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div class="form-group">
-        <label>Date</label>
-        <input type="date" id="ev-date">
-      </div>
-      <div class="form-group">
-        <label>Time</label>
-        <input type="time" id="ev-time" value="08:00">
-      </div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div class="form-group">
-        <label>Duration (minutes)</label>
-        <input type="number" id="ev-duration" value="60" min="15" step="15">
-      </div>
-      <div class="form-group">
-        <label>Event Type</label>
-        <select id="ev-type">
-          <option value="visit">🗺️ Site Visit</option>
-          <option value="hotel">🏨 Hotel / Stay</option>
-          <option value="leisure">🌅 Leisure</option>
-          <option value="transport">🚌 Transport</option>
-          <option value="meal">🍜 Meal</option>
-          <option value="other">📌 Other</option>
-        </select>
-      </div>
-    </div>
-    <div class="form-group">
-      <label>Linked Spot (optional)</label>
-      <select id="ev-spot">
-        <option value="">— None —</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label>Notes</label>
-      <textarea id="ev-notes" placeholder="Reminders, tips, directions..."></textarea>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeEventModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="saveEvent()">Save Event</button>
-    </div>
-  </div>
-</div>
-
-<!-- ── FEE MODAL ────────────────────────────────────────────────── -->
-<div class="modal-overlay" id="fee-modal" onclick="if(event.target===this)closeFeeModal()">
-  <div class="modal" onclick="event.stopPropagation()" style="max-width:520px">
-    <h3 id="fee-modal-title">＋ Add Fee Entry</h3>
-    <div class="form-group">
-      <label>Fee Name / Description</label>
-      <input type="text" id="fee-name" placeholder="e.g. Silop Cave Entrance Fee">
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div class="form-group">
-        <label>Amount per Person (₱)</label>
-        <input type="number" id="fee-amount" value="0" min="0" step="50">
-      </div>
-      <div class="form-group">
-        <label>Category</label>
-        <select id="fee-category">
-          <option value="entrance">🎟 Entrance Fee</option>
-          <option value="hotel">🏨 Hotel / Accommodation</option>
-          <option value="transport">🚌 Transport</option>
-          <option value="guide">👤 Guide Fee</option>
-          <option value="meal">🍜 Food & Drinks</option>
-          <option value="other">📌 Other</option>
-        </select>
-      </div>
-    </div>
-    <div class="form-group">
-      <label>Linked Spot (optional)</label>
-      <select id="fee-spot">
-        <option value="">— None —</option>
-      </select>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeFeeModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="saveFeeEntry()">Save Fee</button>
-    </div>
-  </div>
-</div>
 
 <script>
 // ─── CORRECTED COORDINATES (verified via Google Maps / Google Places API) ───
@@ -1190,33 +1046,11 @@ function loadState() {
 }
 
 function saveState() {
-  localStorage.setItem('sg_spots', JSON.stringify(spots));
-  localStorage.setItem('sg_checked', JSON.stringify(checked));
-  localStorage.setItem('sg_favorites', JSON.stringify(favorites));
-  localStorage.setItem('sg_starred', JSON.stringify(starred));
-  localStorage.setItem('sg_priority', JSON.stringify(priorityOrder));
-  localStorage.setItem('sg_schedule', JSON.stringify(schedule));
-  localStorage.setItem('sg_fees', JSON.stringify(fees));
-  // ── Sync to Firebase (non-blocking) ──
-  syncToFirebase();
+  // VIEW ONLY — no writes allowed
 }
 
 function syncToFirebase() {
-  if (typeof firebase === 'undefined') return; // Firebase not configured yet
-  try {
-    firebase.database().ref('surigao_planner').set({
-      spots,
-      checked,
-      favorites,
-      starred,
-      priorityOrder,
-      schedule,
-      fees,
-      lastUpdated: Date.now()
-    });
-  } catch(e) {
-    console.warn('Firebase sync failed:', e);
-  }
+  // VIEW ONLY — no writes allowed
 }
 
 // ─── RENDER ──────────────────────────────────────────────────
@@ -1239,10 +1073,8 @@ function renderSpotCard(s) {
     <div class="card-top">
       <div class="card-emoji">${s.emoji}</div>
       <div class="card-actions">
-        <button class="icon-btn${isStar?' star-active':''}" title="Star (priority)" onclick="toggleStar('${s.id}')">⭐</button>
-        <button class="icon-btn${isFav?' fav-active':''}" title="Favorite" onclick="toggleFav('${s.id}')">♥</button>
-        <button class="icon-btn" title="Edit spot" onclick="openModal('${s.id}')">✏️</button>
-        <button class="icon-btn" title="Delete" onclick="deleteSpot('${s.id}')">🗑</button>
+        ${isStar?'<span class="icon-btn star-active" title="Starred">⭐</span>':''}
+        ${isFav?'<span class="icon-btn fav-active" title="Favorited">♥</span>':''}
       </div>
     </div>
     <div class="card-body">
@@ -1255,8 +1087,8 @@ function renderSpotCard(s) {
       <div class="card-footer">
         <span class="tag">${s.tag}</span>
         <div class="check-wrap">
-          <input type="checkbox" id="chk-${s.id}" ${isChecked?'checked':''} onchange="toggleCheck('${s.id}',this)">
-          <label for="chk-${s.id}">${isChecked?'Visited':'Mark visited'}</label>
+          <input type="checkbox" id="chk-${s.id}" ${isChecked?'checked':''} disabled style="cursor:default">
+          <label for="chk-${s.id}" style="cursor:default">${isChecked?'✅ Visited':'Not yet visited'}</label>
         </div>
       </div>
     </div>
@@ -1307,10 +1139,6 @@ function renderPriority() {
       <div class="priority-info">
         <strong>${s.name}${starred[s.id]?' ⭐':''}</strong>
         <span>${s.tag} · ${isChecked?'✅ Visited':'🔲 Not yet visited'}</span>
-      </div>
-      <div class="priority-move">
-        <button class="move-btn" onclick="movePriority('${s.id}',-1)" ${i===0?'disabled':''}>▲</button>
-        <button class="move-btn" onclick="movePriority('${s.id}',1)" ${i===ordered.length-1?'disabled':''}>▼</button>
       </div>
     </div>`;
   }).join('');
@@ -1661,11 +1489,10 @@ function renderSelectedDay() {
   const d = new Date(calSelectedDate+'T00:00:00');
   const label = d.toLocaleDateString('en-PH',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   const evHtml = evs.length ? evs.map(ev=>renderEventItem(ev)).join('') :
-    '<p style="font-size:13px;color:var(--muted);padding:12px 0">No events on this day. Click ＋ Add Event to schedule one.</p>';
+    '<p style="font-size:13px;color:var(--muted);padding:12px 0">No events scheduled for this day.</p>';
   el.innerHTML = `
     <div class="cal-selected-title">
       <span>📅 ${label}</span>
-      <button class="btn btn-primary" style="font-size:12px;padding:7px 14px" onclick="openEventModal(null,'${calSelectedDate}')">＋ Add</button>
     </div>
     <div class="event-list">${evHtml}</div>`;
 }
@@ -1681,10 +1508,6 @@ function renderEventItem(ev) {
         ${spot?`${spot.emoji} ${spot.name} · `:''}${TYPE_LABELS[ev.type]||'Other'}${dur?' · '+dur:''}
       </div>
       ${ev.notes?`<div class="event-notes">💬 ${ev.notes}</div>`:''}
-    </div>
-    <div class="event-actions">
-      <button class="icon-btn" title="Edit" onclick="openEventModal('${ev.id}')">✏️</button>
-      <button class="icon-btn" title="Delete" onclick="deleteEvent('${ev.id}')">🗑</button>
     </div>
   </div>`;
 }
@@ -1715,10 +1538,6 @@ function renderUpcoming() {
         <div class="upcoming-title">${ev.title}</div>
         <div class="upcoming-meta">${ev.time} · ${TYPE_LABELS[ev.type]||''}${spot?' · '+spot.emoji+' '+spot.name:''}</div>
         ${ev.notes?`<div style="font-size:11.5px;color:var(--muted);margin-top:3px;font-style:italic">💬 ${ev.notes}</div>`:''}
-      </div>
-      <div class="event-actions">
-        <button class="icon-btn" title="Edit" onclick="openEventModal('${ev.id}')">✏️</button>
-        <button class="icon-btn" title="Delete" onclick="deleteEvent('${ev.id}')">🗑</button>
       </div>
     </div>`;
   }).join('');
@@ -1856,11 +1675,9 @@ function renderFees() {
           ${p.paid&&p.paidAt?`<div class="payer-paid-date">Paid ${new Date(p.paidAt).toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'})}</div>`:''}
         </div>
         <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
-          <button class="payer-status ${p.paid?'paid':'unpaid'}" onclick="togglePayerPaid('${f.id}','${p.id}')">
+          <span class="payer-status ${p.paid?'paid':'unpaid'}" style="cursor:default">
             ${p.paid?'✅ Paid':'⏳ Unpaid'}
-          </button>
-          <button class="icon-btn" title="Edit name" onclick="editPayerName('${f.id}','${p.id}')">✏️</button>
-          <button class="icon-btn" title="Remove" onclick="removePayer('${f.id}','${p.id}')">🗑</button>
+          </span>
         </div>
       </div>`).join('');
 
@@ -1872,20 +1689,12 @@ function renderFees() {
           <div class="fee-entry-meta">${spot?spot.emoji+' '+spot.name+' · ':''}<strong>₱${(f.amount||0).toLocaleString()}/person</strong> · ${paidCount}/${payers.length} paid</div>
         </div>
         <div class="fee-amount">₱${((f.amount||0)*paidCount).toLocaleString()}</div>
-        <div class="fee-entry-actions">
-          <button class="icon-btn" title="Edit fee" onclick="openFeeModal('${f.id}')">✏️</button>
-          <button class="icon-btn" title="Delete" onclick="deleteFeeEntry('${f.id}')">🗑</button>
-        </div>
       </div>
       <div class="fee-progress">
         <div class="fee-prog-bar-outer"><div class="fee-prog-bar-inner" style="width:${pct}%"></div></div>
         <div class="fee-prog-label"><span>${paidCount} of ${payers.length} paid</span><span>${pct}%</span></div>
       </div>
-      <div class="payer-list">${payerRows||'<p style="font-size:13px;color:var(--muted)">No payers yet. Add one below.</p>'}</div>
-      <div class="fee-add-payer">
-        <input type="text" id="new-payer-${f.id}" placeholder="Payer name (e.g. Juan)" onkeydown="if(event.key==='Enter')addPayer('${f.id}')">
-        <button class="btn btn-outline" style="white-space:nowrap" onclick="addPayer('${f.id}')">＋ Add Payer</button>
-      </div>
+      <div class="payer-list">${payerRows||'<p style="font-size:13px;color:var(--muted)">No payers listed.</p>'}</div>
     </div>`;
   }).join('');
 }
@@ -1996,10 +1805,9 @@ loadState();
 renderAll();
 </script>
 
-<!-- ═══ FIREBASE SYNC ════════════════════════════════════════════
-     🔴 REPLACE THE CONFIG BELOW WITH YOUR OWN FIREBASE CONFIG 🔴
-     After replacing, every Save action will sync to Firebase and
-     your Viewer site will update live for friends watching it.
+<!-- ═══ FIREBASE LIVE SYNC (READ-ONLY VIEWER) ══════════════════
+     This viewer listens for live updates from the planner.
+     It NEVER writes — it only reads.
 ═══════════════════════════════════════════════════════════════ -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
@@ -2017,11 +1825,36 @@ renderAll();
 };
   try {
     firebase.initializeApp(firebaseConfig);
-    console.log('✅ Firebase connected. Planner will sync to Realtime Database.');
-    // Push current localStorage state immediately so viewer has fresh data
-    syncToFirebase();
+    console.log('✅ Firebase connected (VIEW ONLY). Listening for live updates...');
+
+    // Real-time listener — updates the viewer whenever the planner saves
+    firebase.database().ref('surigao_planner').on('value', (snapshot) => {
+      const data = snapshot.val();
+      if (!data) return;
+      try {
+        if (data.spots && Array.isArray(data.spots)) {
+          spots = DEFAULT_SPOTS.map(def => {
+            const s = data.spots.find(x => x.id === def.id);
+            return s ? { ...def, name: s.name, desc: s.desc, tag: s.tag, emoji: s.emoji } : def;
+          });
+          data.spots.forEach(s => {
+            if (!DEFAULT_SPOTS.find(d => d.id === s.id)) spots.push(s);
+          });
+        }
+        if (data.checked)      checked       = data.checked;
+        if (data.favorites)    favorites     = data.favorites;
+        if (data.starred)      starred       = data.starred;
+        if (data.priorityOrder && Array.isArray(data.priorityOrder)) priorityOrder = data.priorityOrder;
+        if (data.schedule && Array.isArray(data.schedule))  schedule = data.schedule;
+        if (data.fees && Array.isArray(data.fees))          fees     = data.fees;
+        renderAll();
+        console.log('🔄 Live data updated from planner');
+      } catch(e) {
+        console.warn('Error applying Firebase data:', e);
+      }
+    });
   } catch(e) {
-    console.warn('Firebase init failed — edit mode still works offline via localStorage.', e);
+    console.warn('Firebase init failed — showing local/default data.', e);
   }
 })();
 </script>
