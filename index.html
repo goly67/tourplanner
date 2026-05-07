@@ -813,16 +813,11 @@
         <span class="stat-num" id="visited-count">0</span>
         <span class="stat-label">Visited</span>
       </div>
-      <div class="stat">
-        <span class="stat-num" id="fav-count">0</span>
-        <span class="stat-label">Favorites</span>
-      </div>
     </div>
   </div>
   <div class="tabs-bar">
     <button class="tab-btn active" onclick="switchTab('all', this)">🗺️ All Spots</button>
     <button class="tab-btn" onclick="switchTab('priority', this)">⭐ Priority Order</button>
-    <button class="tab-btn" onclick="switchTab('favorites', this)">❤️ Favorites</button>
     <button class="tab-btn" onclick="switchTab('map', this)">📍 Map</button>
     <button class="tab-btn" onclick="switchTab('schedule', this)">📅 Schedule</button>
     <button class="tab-btn" onclick="switchTab('fees', this)">💰 Fees</button>
@@ -844,7 +839,6 @@
       <span class="filter-chip active" onclick="setFilter('all',this)">All</span>
       <span class="filter-chip" onclick="setFilter('visited',this)">✅ Visited</span>
       <span class="filter-chip" onclick="setFilter('unvisited',this)">🔲 To Visit</span>
-      <span class="filter-chip" onclick="setFilter('favorites',this)">❤️ Favorites</span>
     </div>
     <div class="spots-grid" id="spots-grid"></div>
   </div>
@@ -855,13 +849,6 @@
     </div>
     <p style="font-size:13px;color:var(--muted);margin-bottom:18px;">Spots ordered by visit priority. ⭐ starred spots appear first.</p>
     <div class="priority-list" id="priority-list"></div>
-  </div>
-
-  <div class="tab-content" id="tab-favorites">
-    <div class="toolbar">
-      <span class="toolbar-title">Your Favorites ❤️</span>
-    </div>
-    <div class="spots-grid" id="fav-grid"></div>
   </div>
 
   <div class="tab-content" id="tab-map">
@@ -996,7 +983,6 @@ const DEFAULT_SPOTS = [
 // ─── STATE ───────────────────────────────────────────────────
 let spots = [];
 let checked = {};
-let favorites = {};
 let starred = {};
 let priorityOrder = [];
 let editingId = null;
@@ -1031,7 +1017,6 @@ function loadState() {
       spots = JSON.parse(JSON.stringify(DEFAULT_SPOTS));
     }
     checked = JSON.parse(localStorage.getItem('sg_checked')) || {};
-    favorites = JSON.parse(localStorage.getItem('sg_favorites')) || {};
     starred = JSON.parse(localStorage.getItem('sg_starred')) || {};
     priorityOrder = JSON.parse(localStorage.getItem('sg_priority')) || spots.map(s=>s.id);
     spots.forEach(s => { if (!priorityOrder.includes(s.id)) priorityOrder.push(s.id); });
@@ -1039,7 +1024,7 @@ function loadState() {
     fees = JSON.parse(localStorage.getItem('sg_fees')) || [];
   } catch(e) {
     spots = JSON.parse(JSON.stringify(DEFAULT_SPOTS));
-    checked = {}; favorites = {}; starred = {};
+    checked = {}; starred = {};
     priorityOrder = spots.map(s=>s.id);
     schedule = []; fees = [];
   }
@@ -1065,7 +1050,6 @@ function getPriorityLabel(id) {
 
 function renderSpotCard(s) {
   const isChecked = !!checked[s.id];
-  const isFav = !!favorites[s.id];
   const isStar = !!starred[s.id];
   return `
   <div class="spot-card${isChecked?' checked':''}${isFav?' favorited':''}" id="card-${s.id}" style="animation-delay:${Math.random()*0.15}s">
@@ -1098,7 +1082,6 @@ function renderSpotCard(s) {
 function getFilteredSpots() {
   if (activeFilter === 'visited') return spots.filter(s=>checked[s.id]);
   if (activeFilter === 'unvisited') return spots.filter(s=>!checked[s.id]);
-  if (activeFilter === 'favorites') return spots.filter(s=>favorites[s.id]);
   return spots;
 }
 
@@ -1106,7 +1089,6 @@ function renderAll() {
   updateStats();
   renderGrid();
   renderPriority();
-  renderFavorites();
   renderMapList();
   if (leafletMap) renderMap();
   renderSchedule();
@@ -1142,17 +1124,6 @@ function renderPriority() {
       </div>
     </div>`;
   }).join('');
-}
-
-function renderFavorites() {
-  const grid = document.getElementById('fav-grid');
-  const favs = spots.filter(s=>favorites[s.id]);
-  grid.innerHTML = favs.length ? favs.map(renderSpotCard).join('') :
-    `<div class="empty-state" style="grid-column:1/-1">
-      <div class="empty-icon">❤️</div>
-      <h4>No favorites yet</h4>
-      <p>Tap the ♥ on any spot to add it here</p>
-    </div>`;
 }
 
 function renderMapList() {
@@ -1262,7 +1233,6 @@ function focusMapSpot(id) {
 function updateStats() {
   const total = spots.length;
   const visited = spots.filter(s=>checked[s.id]).length;
-  const favCount = spots.filter(s=>favorites[s.id]).length;
   document.getElementById('total-count').textContent = total;
   document.getElementById('visited-count').textContent = visited;
   document.getElementById('fav-count').textContent = favCount;
@@ -1280,13 +1250,6 @@ function toggleCheck(id, el) {
   showToast(el.checked ? '✅ Marked as visited!' : '🔲 Unmarked');
 }
 
-function toggleFav(id) {
-  favorites[id] = !favorites[id];
-  saveState();
-  renderAll();
-  showToast(favorites[id] ? '❤️ Added to favorites!' : '💔 Removed from favorites');
-}
-
 function toggleStar(id) {
   starred[id] = !starred[id];
   saveState();
@@ -1302,7 +1265,7 @@ function deleteSpot(id) {
   if (!confirm('Remove this spot from your planner?')) return;
   spots = spots.filter(s=>s.id!==id);
   priorityOrder = priorityOrder.filter(x=>x!==id);
-  delete checked[id]; delete favorites[id]; delete starred[id];
+  delete checked[id]; delete starred[id];
   saveState();
   renderAll();
   showToast('🗑 Spot removed');
@@ -1842,7 +1805,6 @@ renderAll();
           });
         }
         if (data.checked)      checked       = data.checked;
-        if (data.favorites)    favorites     = data.favorites;
         if (data.starred)      starred       = data.starred;
         if (data.priorityOrder && Array.isArray(data.priorityOrder)) priorityOrder = data.priorityOrder;
         if (data.schedule && Array.isArray(data.schedule))  schedule = data.schedule;
