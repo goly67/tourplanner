@@ -2281,7 +2281,10 @@
       const rawUrl = srcMatch ? srcMatch[1] : value;
       const url = decodeURIComponent(rawUrl);
 
-      let match = url.match(/!2d([\-\d.]+)!3d([\-\d.]+)/);
+      let match = url.match(/!1d[\d.]+!2d([\-\d.]+)!3d([\-\d.]+)/);
+      if (match) return { lat: parseFloat(match[2]), lng: parseFloat(match[1]) };
+
+      match = url.match(/!2d([\-\d.]+)!3d([\-\d.]+)/);
       if (match) return { lat: parseFloat(match[2]), lng: parseFloat(match[1]) };
 
       match = url.match(/!3d([\-\d.]+)!4d([\-\d.]+)/);
