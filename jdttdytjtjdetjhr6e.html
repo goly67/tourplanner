@@ -277,15 +277,17 @@
     }
 
     .spot-card {
-      background: var(--card-bg);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      border: 1.5px solid rgba(255, 255, 255, 0.8);
-      overflow: hidden;
-      transition: all 0.25s;
-      position: relative;
-      animation: cardIn 0.4s ease both;
-    }
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border: 1.5px solid rgba(255,255,255,0.8);
+    overflow: hidden;
+    transition: all 0.25s;
+    position: relative;
+    animation: cardIn 0.4s ease both;
+    display: flex;
+    flex-direction: column;
+  }
 
     @keyframes cardIn {
       from {
@@ -369,9 +371,7 @@
       color: var(--gold);
     }
 
-    .card-body {
-      padding: 12px 18px 18px;
-    }
+    .card-body { padding: 12px 18px 18px; display: flex; flex-direction: column; flex: 1; }
 
     .card-priority {
       display: inline-flex;
@@ -442,11 +442,9 @@
     }
 
     .card-footer {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
+    display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+    margin-top: auto;
+  }
 
     .tag {
       background: var(--foam);
@@ -2774,8 +2772,57 @@
       try {
         firebase.initializeApp(firebaseConfig);
         console.log('✅ Firebase connected. Planner will sync to Realtime Database.');
-        // Push current localStorage state immediately so viewer has fresh data
-        syncToFirebase();
+
+        const plannerRef = firebase.database().ref('surigao_planner');
+        plannerRef.once('value').then(snapshot => {
+          const data = snapshot.val();
+          if (data) {
+            if (Array.isArray(data.spots)) {
+              spots = data.spots;
+              localStorage.setItem('sg_spots', JSON.stringify(spots));
+            }
+            if (data.checked) {
+              checked = data.checked;
+              localStorage.setItem('sg_checked', JSON.stringify(checked));
+            }
+            if (data.stars) {
+              stars = data.stars;
+              localStorage.setItem('sg_stars', JSON.stringify(stars));
+            }
+            if (Array.isArray(data.priorityOrder)) {
+              priorityOrder = data.priorityOrder;
+              localStorage.setItem('sg_priority', JSON.stringify(priorityOrder));
+            }
+            if (Array.isArray(data.schedule)) {
+              schedule = data.schedule;
+              localStorage.setItem('sg_schedule', JSON.stringify(schedule));
+            }
+            if (Array.isArray(data.fees)) {
+              fees = data.fees;
+              localStorage.setItem('sg_fees', JSON.stringify(fees));
+            }
+            renderAll();
+            console.log('🔄 Firebase loaded planner state from remote.');
+          } else if (fees.length || spots.length || schedule.length) {
+            syncToFirebase();
+          }
+        }).catch(err => console.warn('Firebase read failed:', err));
+
+        plannerRef.on('value', snapshot => {
+          const data = snapshot.val();
+          if (!data) return;
+          try {
+            if (Array.isArray(data.spots)) { spots = data.spots; localStorage.setItem('sg_spots', JSON.stringify(spots)); }
+            if (data.checked) { checked = data.checked; localStorage.setItem('sg_checked', JSON.stringify(checked)); }
+            if (data.stars) { stars = data.stars; localStorage.setItem('sg_stars', JSON.stringify(stars)); }
+            if (Array.isArray(data.priorityOrder)) { priorityOrder = data.priorityOrder; localStorage.setItem('sg_priority', JSON.stringify(priorityOrder)); }
+            if (Array.isArray(data.schedule)) { schedule = data.schedule; localStorage.setItem('sg_schedule', JSON.stringify(schedule)); }
+            if (Array.isArray(data.fees)) { fees = data.fees; localStorage.setItem('sg_fees', JSON.stringify(fees)); }
+            renderAll();
+          } catch (e) {
+            console.warn('Firebase listener failed:', e);
+          }
+        });
       } catch (e) {
         console.warn('Firebase init failed — edit mode still works offline via localStorage.', e);
       }
