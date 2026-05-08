@@ -2275,64 +2275,64 @@
       if (emojiInput) emojiInput.value = selectedEmoji;
     }
 
+    function roundCoord(value) {
+      return Math.round(value * 1e7) / 1e7;
+    }
+
     function parseLocationInput(value) {
       if (!value) return null;
       const srcMatch = value.match(/src=["']([^"']+)["']/i);
-      const rawUrl = srcMatch ? srcMatch[1] : value;
-      const url = decodeURIComponent(rawUrl);
-
-      let match = url.match(/!1d[\d.]+!2d([\-\d.]+)!3d([\-\d.]+)/);
-      if (match) {
-        const coords = { lat: parseFloat(match[2]), lng: parseFloat(match[1]) };
-        console.log('Parsed coords from !1d!2d!3d:', coords);
-        return coords;
+      const rawUrl = srcMatch ? srcMatch[1] : value.trim();
+      let url = rawUrl;
+      try {
+        url = decodeURIComponent(rawUrl);
+      } catch (e) {
+        url = rawUrl;
       }
 
-      match = url.match(/!2d([\-\d.]+)!3d([\-\d.]+)/);
-      if (match) {
-        const coords = { lat: parseFloat(match[2]), lng: parseFloat(match[1]) };
-        console.log('Parsed coords from !2d!3d:', coords);
-        return coords;
+      const lonMatches = Array.from(url.matchAll(/!2d([\-\d.]+)/g)).map(m => parseFloat(m[1]));
+      const latMatches = Array.from(url.matchAll(/!3d([\-\d.]+)/g)).map(m => parseFloat(m[1]));
+      if (lonMatches.length && latMatches.length) {
+        const lng = lonMatches[lonMatches.length - 1];
+        const lat = latMatches[latMatches.length - 1];
+        if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
+          const coords = { lat: roundCoord(lat), lng: roundCoord(lng) };
+          console.log('Parsed coords from !2d/!3d:', coords);
+          return coords;
+        }
       }
 
-      match = url.match(/!3d([\-\d.]+)!4d([\-\d.]+)/);
+      let match = url.match(/@([\-\d.]+),([\-\d.]+)/);
       if (match) {
-        const coords = { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
-        console.log('Parsed coords from !3d!4d:', coords);
-        return coords;
-      }
-
-      match = url.match(/@([\-\d.]+),([\-\d.]+)/);
-      if (match) {
-        const coords = { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+        const coords = { lat: roundCoord(parseFloat(match[1])), lng: roundCoord(parseFloat(match[2])) };
         console.log('Parsed coords from @lat,lng:', coords);
         return coords;
       }
 
       match = url.match(/center=([\-\d.]+),([\-\d.]+)/i);
       if (match) {
-        const coords = { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+        const coords = { lat: roundCoord(parseFloat(match[1])), lng: roundCoord(parseFloat(match[2])) };
         console.log('Parsed coords from center:', coords);
         return coords;
       }
 
       match = url.match(/ll=([\-\d.]+),([\-\d.]+)/i);
       if (match) {
-        const coords = { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+        const coords = { lat: roundCoord(parseFloat(match[1])), lng: roundCoord(parseFloat(match[2])) };
         console.log('Parsed coords from ll:', coords);
         return coords;
       }
 
       match = url.match(/q=([\-\d.]+),([\-\d.]+)/i);
       if (match) {
-        const coords = { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+        const coords = { lat: roundCoord(parseFloat(match[1])), lng: roundCoord(parseFloat(match[2])) };
         console.log('Parsed coords from q:', coords);
         return coords;
       }
 
       match = value.match(/([+-]?\d+\.\d+)\s*,\s*([+-]?\d+\.\d+)/);
       if (match) {
-        const coords = { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+        const coords = { lat: roundCoord(parseFloat(match[1])), lng: roundCoord(parseFloat(match[2])) };
         console.log('Parsed coords from lat,lng:', coords);
         return coords;
       }
@@ -2370,12 +2370,12 @@
 
       if (locationString) {
         const coords = parseLocationInput(locationString);
-        if (!coords) {
+        if (!coords || Number.isNaN(coords.lat) || Number.isNaN(coords.lng)) {
           showToast('⚠️ Could not parse location. Paste a Google Maps iframe or lat,lng coordinates.');
           return;
         }
-        lat = coords.lat;
-        lng = coords.lng;
+        lat = roundCoord(coords.lat);
+        lng = roundCoord(coords.lng);
       }
 
       if (editingId) {

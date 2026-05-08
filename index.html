@@ -1168,10 +1168,12 @@ function renderMap() {
   }
 
   ordered.forEach((s, i) => {
+    const lat = Number(s.lat);
+    const lng = Number(s.lng);
     const isV = !!checked[s.id];
     const icon = makeMarkerIcon(s, i+1, isV);
-    console.log(`Adding marker for ${s.name} at lat: ${s.lat}, lng: ${s.lng}`);
-    const marker = L.marker([s.lat, s.lng], { icon })
+    console.log(`Adding marker for ${s.name} at lat: ${lat}, lng: ${lng}`);
+    const marker = L.marker([lat, lng], { icon })
       .addTo(leafletMap)
       .bindPopup(`
         <div class="map-popup">
@@ -1185,7 +1187,7 @@ function renderMap() {
     mapMarkers[s.id] = marker;
   });
 
-  const latlngs = ordered.map(s=>[s.lat,s.lng]);
+  const latlngs = ordered.map(s=>[Number(s.lat),Number(s.lng)]);
   leafletMap.fitBounds(L.latLngBounds(latlngs).pad(0.18));
   setTimeout(()=>leafletMap.invalidateSize(), 100);
 }
