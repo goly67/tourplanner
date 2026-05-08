@@ -194,6 +194,8 @@
     transition: all 0.25s;
     position: relative;
     animation: cardIn 0.4s ease both;
+    display: flex;
+    flex-direction: column;
   }
   @keyframes cardIn {
     from { opacity: 0; transform: translateY(20px); }
@@ -230,7 +232,7 @@
   .icon-btn:hover { background: var(--foam); color: var(--ocean); transform: scale(1.15); }
   .icon-btn.star-active { color: var(--gold); }
 
-  .card-body { padding: 12px 18px 18px; }
+  .card-body { padding: 12px 18px 18px; display: flex; flex-direction: column; flex: 1; }
   .card-priority {
     display: inline-flex; align-items: center; gap: 4px;
     font-size: 10.5px; font-weight: 600; text-transform: uppercase;
@@ -263,6 +265,7 @@
   }
   .card-footer {
     display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+    margin-top: auto;
   }
   .tag {
     background: var(--foam);
@@ -721,16 +724,6 @@
     display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     gap: 14px; margin-bottom: 24px;
   }
-  .fee-announcement {
-    background: #fff7e5;
-    border: 1px solid rgba(244,196,48,0.25);
-    color: #5b4d1f;
-    padding: 16px 18px;
-    border-radius: 16px;
-    margin-bottom: 20px;
-    line-height: 1.5;
-    box-shadow: var(--shadow);
-  }
   .fee-card-announcement {
     background: rgba(255, 247, 229, 0.95);
     border-left: 4px solid rgba(244,196,48,0.9);
@@ -959,7 +952,6 @@
 
     <!-- Summary stats -->
     <div class="fee-summary" id="fee-summary"></div>
-    <div class="fee-announcement" id="fee-announcement" style="display:none"></div>
 
     <!-- Fee entries list -->
     <div id="fee-entries-list"></div>
@@ -988,7 +980,6 @@ let calMonth = new Date().getMonth();
 let calSelectedDate = null;
 // Fees
 let fees = [];
-let feeAnnouncement = '';
 let editingFeeId = null;
 
 function loadState() {
@@ -1002,13 +993,11 @@ function loadState() {
     spots.forEach(s => { if (!priorityOrder.includes(s.id)) priorityOrder.push(s.id); });
     schedule = (JSON.parse(localStorage.getItem('sg_schedule')) || []).map(ev => ({ ...ev, status: ev.status || 'not_finished' }));
     fees = JSON.parse(localStorage.getItem('sg_fees')) || [];
-    feeAnnouncement = localStorage.getItem('sg_feeAnnouncement') || '';
   } catch(e) {
     spots = [];
     checked = {}; stars = {};
     priorityOrder = spots.map(s=>s.id);
     schedule = []; fees = [];
-    feeAnnouncement = '';
   }
 }
 
@@ -1624,12 +1613,6 @@ function renderFees() {
       <span class="fee-stat-label">Payers Done</span>
     </div>`;
 
-  const annEl = document.getElementById('fee-announcement');
-  if (annEl) {
-    annEl.textContent = feeAnnouncement || '';
-    annEl.style.display = feeAnnouncement ? 'block' : 'none';
-  }
-
   const el = document.getElementById('fee-entries-list');
   if (!fees.length) {
     el.innerHTML = `<div class="empty-state"><div class="empty-icon">💰</div><h4>No fee entries yet</h4><p>Add fees for hotels, entrances, guides, etc.</p></div>`;
@@ -1818,7 +1801,6 @@ renderAll();
         if (data.priorityOrder && Array.isArray(data.priorityOrder)) priorityOrder = data.priorityOrder;
         if (data.schedule && Array.isArray(data.schedule))  schedule = data.schedule;
         if (data.fees && Array.isArray(data.fees))          fees     = data.fees;
-        if (data.announcement !== undefined)                feeAnnouncement = data.announcement || '';
         renderAll();
         console.log('🔄 Live data updated from planner');
       } catch(e) {
