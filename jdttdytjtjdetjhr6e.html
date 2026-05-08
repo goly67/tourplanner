@@ -2199,6 +2199,17 @@
       showToast('✨ Priority sorted by stars!');
     }
 
+    function movePriority(id, dir) {
+      const idx = priorityOrder.indexOf(id);
+      if (idx === -1) return;
+      const newIdx = idx + dir;
+      if (newIdx < 0 || newIdx >= priorityOrder.length) return;
+      [priorityOrder[idx], priorityOrder[newIdx]] = [priorityOrder[newIdx], priorityOrder[idx]];
+      saveState();
+      renderAll();
+      showToast('🔄 Priority updated!');
+    }
+
     // ─── MODAL ───────────────────────────────────────────────────
     function openModal(id = null) {
       editingId = id;
