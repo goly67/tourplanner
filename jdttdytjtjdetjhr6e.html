@@ -493,6 +493,7 @@
       align-items: center;
       justify-content: center;
       padding: 20px;
+      overflow-y: auto;
     }
 
     .modal-overlay.open {
@@ -504,7 +505,9 @@
       border-radius: 24px;
       padding: 36px;
       width: 100%;
-      max-width: 480px;
+      max-width: 520px;
+      max-height: calc(100vh - 40px);
+      overflow-y: auto;
       box-shadow: 0 24px 80px rgba(5, 31, 53, 0.35);
       animation: modalIn 0.25s ease;
     }
@@ -1018,7 +1021,10 @@
     @media (max-width: 500px) {
     .spots-grid { grid-template-columns: 1fr; }
     .header-stats { gap: 12px; }
-    .modal { padding: 24px; }
+    .modal {
+      padding: 24px;
+      max-height: calc(100vh - 30px);
+    }
     .tabs-bar { padding: 0 8px; }
     .tab-btn { padding: 12px 12px; font-size: 12px; }
   }
@@ -2271,13 +2277,30 @@
     function parseLocationInput(value) {
       if (!value) return null;
       const srcMatch = value.match(/src=["']([^"']+)["']/i);
-      const url = srcMatch ? srcMatch[1] : value;
+      const rawUrl = srcMatch ? srcMatch[1] : value;
+      const url = decodeURIComponent(rawUrl);
+
       let match = url.match(/!2d([\-\d.]+)!3d([\-\d.]+)/);
       if (match) return { lat: parseFloat(match[2]), lng: parseFloat(match[1]) };
+
+      match = url.match(/!3d([\-\d.]+)!4d([\-\d.]+)/);
+      if (match) return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+
       match = url.match(/@([\-\d.]+),([\-\d.]+)/);
       if (match) return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+
+      match = url.match(/center=([\-\d.]+),([\-\d.]+)/i);
+      if (match) return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+
+      match = url.match(/ll=([\-\d.]+),([\-\d.]+)/i);
+      if (match) return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+
+      match = url.match(/q=([\-\d.]+),([\-\d.]+)/i);
+      if (match) return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+
       match = value.match(/([+-]?\d+\.\d+)\s*,\s*([+-]?\d+\.\d+)/);
       if (match) return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+
       return null;
     }
 
