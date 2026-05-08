@@ -1765,6 +1765,7 @@
           <option>Urban</option>
           <option>Accommodation</option>
           <option>Government</option>
+          <option>Transport</option>
         </select>
       </div>
       <div class="form-group">
@@ -1791,8 +1792,8 @@
       </div>
       <div class="form-group">
         <label>Location</label>
-        <textarea id="inp-location" placeholder="Paste a Google Maps iframe or lat,lng coordinates" onchange="displayParsedCoords()" oninput="displayParsedCoords()" onpaste="displayParsedCoords()"></textarea>
-        <div id="coords-display" style="margin-top:8px;padding:10px;background:var(--foam);border-radius:8px;font-size:12px;color:var(--muted);display:none;font-family:monospace"></div>
+        <textarea id="inp-location" placeholder="Paste a Google Maps iframe or lat,lng coordinates" oninput="displayParsedCoords()"></textarea>
+        <div id="coords-display" style="margin-top:8px;padding:10px;background:var(--foam);border-radius:8px;font-size:12px;color:var(--muted);display:none;font-family:monospace;line-height:1.7"></div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
@@ -2341,19 +2342,35 @@
       return null;
     }
 
+    function detectParseMethod(value) {
+      if (!value) return null;
+      const srcMatch = value.match(/src=["']([^"']+)["']/i);
+      const rawUrl = srcMatch ? srcMatch[1] : value.trim();
+      let url = rawUrl;
+      try { url = decodeURIComponent(rawUrl); } catch(e) {}
+      if (/!2d[\-\d.]+/.test(url) && /!3d[\-\d.]+/.test(url)) return '📍 Detected from Google Maps iframe (!3d lat / !2d lng)';
+      if (/@[\-\d.]+,[\-\d.]+/.test(url)) return '📍 Detected from @lat,lng in URL';
+      if (/center=[\-\d.]+,[\-\d.]+/i.test(url)) return '📍 Detected from center= parameter';
+      if (/ll=[\-\d.]+,[\-\d.]+/i.test(url)) return '📍 Detected from ll= parameter';
+      if (/q=[\-\d.]+,[\-\d.]+/i.test(url)) return '📍 Detected from q= parameter';
+      if (/[+-]?\d+\.\d+\s*,\s*[+-]?\d+\.\d+/.test(value)) return '📍 Detected from manual lat,lng input';
+      return null;
+    }
+
     function displayParsedCoords() {
       const locationStr = document.getElementById('inp-location').value.trim();
       const display = document.getElementById('coords-display');
-      if (!locationStr) {
-        display.style.display = 'none';
-        return;
-      }
+      if (!locationStr) { display.style.display = 'none'; return; }
       const coords = parseLocationInput(locationStr);
+      const method = detectParseMethod(locationStr);
       if (coords) {
-        display.innerHTML = `Latitude: ${coords.lat}<br>Longitude: ${coords.lng}`;
+        display.innerHTML = `✅ <strong>Lat:</strong> ${coords.lat} &nbsp;|&nbsp; <strong>Lng:</strong> ${coords.lng}<br><span style="font-size:11px;opacity:0.75">${method || '📍 Coordinates parsed'}</span>`;
+        display.style.color = 'var(--ocean)';
         display.style.display = 'block';
       } else {
-        display.style.display = 'none';
+        display.innerHTML = '⚠️ Could not parse coordinates. Paste a Google Maps iframe or <code>lat, lng</code> numbers.';
+        display.style.color = 'var(--coral)';
+        display.style.display = 'block';
       }
     }
 
