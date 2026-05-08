@@ -2282,29 +2282,62 @@
       const url = decodeURIComponent(rawUrl);
 
       let match = url.match(/!1d[\d.]+!2d([\-\d.]+)!3d([\-\d.]+)/);
-      if (match) return { lat: parseFloat(match[2]), lng: parseFloat(match[1]) };
+      if (match) {
+        const coords = { lat: parseFloat(match[2]), lng: parseFloat(match[1]) };
+        console.log('Parsed coords from !1d!2d!3d:', coords);
+        return coords;
+      }
 
       match = url.match(/!2d([\-\d.]+)!3d([\-\d.]+)/);
-      if (match) return { lat: parseFloat(match[2]), lng: parseFloat(match[1]) };
+      if (match) {
+        const coords = { lat: parseFloat(match[2]), lng: parseFloat(match[1]) };
+        console.log('Parsed coords from !2d!3d:', coords);
+        return coords;
+      }
 
       match = url.match(/!3d([\-\d.]+)!4d([\-\d.]+)/);
-      if (match) return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+      if (match) {
+        const coords = { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+        console.log('Parsed coords from !3d!4d:', coords);
+        return coords;
+      }
 
       match = url.match(/@([\-\d.]+),([\-\d.]+)/);
-      if (match) return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+      if (match) {
+        const coords = { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+        console.log('Parsed coords from @lat,lng:', coords);
+        return coords;
+      }
 
       match = url.match(/center=([\-\d.]+),([\-\d.]+)/i);
-      if (match) return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+      if (match) {
+        const coords = { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+        console.log('Parsed coords from center:', coords);
+        return coords;
+      }
 
       match = url.match(/ll=([\-\d.]+),([\-\d.]+)/i);
-      if (match) return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+      if (match) {
+        const coords = { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+        console.log('Parsed coords from ll:', coords);
+        return coords;
+      }
 
       match = url.match(/q=([\-\d.]+),([\-\d.]+)/i);
-      if (match) return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+      if (match) {
+        const coords = { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+        console.log('Parsed coords from q:', coords);
+        return coords;
+      }
 
       match = value.match(/([+-]?\d+\.\d+)\s*,\s*([+-]?\d+\.\d+)/);
-      if (match) return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+      if (match) {
+        const coords = { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+        console.log('Parsed coords from lat,lng:', coords);
+        return coords;
+      }
 
+      console.log('No coords parsed from:', value);
       return null;
     }
 

@@ -1170,6 +1170,7 @@ function renderMap() {
   ordered.forEach((s, i) => {
     const isV = !!checked[s.id];
     const icon = makeMarkerIcon(s, i+1, isV);
+    console.log(`Adding marker for ${s.name} at lat: ${s.lat}, lng: ${s.lng}`);
     const marker = L.marker([s.lat, s.lng], { icon })
       .addTo(leafletMap)
       .bindPopup(`
