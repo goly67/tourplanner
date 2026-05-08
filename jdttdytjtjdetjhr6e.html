@@ -1791,8 +1791,17 @@
       </div>
       <div class="form-group">
         <label>Location</label>
-        <textarea id="inp-location" placeholder="Paste a Google Maps iframe or lat,lng coordinates" onchange="displayParsedCoords()" oninput="displayParsedCoords()"></textarea>
-        <div id="coords-display" style="margin-top:8px;padding:10px;background:var(--foam);border-radius:8px;font-size:12px;color:var(--muted);display:none;font-family:monospace"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div>
+            <label style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;display:block">Latitude</label>
+            <input type="number" id="inp-lat" placeholder="e.g. 9.7758007" step="any">
+          </div>
+          <div>
+            <label style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;display:block">Longitude</label>
+            <input type="number" id="inp-lng" placeholder="e.g. 125.4838418" step="any">
+          </div>
+        </div>
+        <div style="margin-top:6px;font-size:11.5px;color:var(--muted)">Copy <code style="background:var(--foam);padding:1px 5px;border-radius:4px">lat</code> and <code style="background:var(--foam);padding:1px 5px;border-radius:4px">lng</code> directly from Firebase — pinpoint accurate 📍</div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
@@ -2243,11 +2252,8 @@
         document.getElementById('inp-tag').value = s.tag;
         selectedEmoji = s.emoji || '🏖️';
         document.getElementById('inp-emoji').value = selectedEmoji;
-        if (s.lat && s.lng) {
-          document.getElementById('inp-location').value = `${s.lat}, ${s.lng}`;
-        } else {
-          document.getElementById('inp-location').value = '';
-        }
+        document.getElementById('inp-lat').value = s.lat != null ? s.lat : '';
+        document.getElementById('inp-lng').value = s.lng != null ? s.lng : '';
         document.querySelectorAll('.emoji-opt').forEach(e => {
           e.classList.toggle('selected', e.textContent === selectedEmoji);
         });
@@ -2258,7 +2264,8 @@
         document.getElementById('inp-tag').value = 'Nature';
         selectedEmoji = '🏖️';
         document.getElementById('inp-emoji').value = selectedEmoji;
-        document.getElementById('inp-location').value = '';
+        document.getElementById('inp-lat').value = '';
+        document.getElementById('inp-lng').value = '';
         document.querySelectorAll('.emoji-opt').forEach(e => e.classList.toggle('selected', e.textContent === selectedEmoji));
       }
       document.getElementById('modal').classList.add('open');
@@ -2275,74 +2282,21 @@
       if (emojiInput) emojiInput.value = selectedEmoji;
     }
 
-    function parseLocationInput(value) {
-      if (!value) return null;
-      const srcMatch = value.match(/src=["']([^"']+)["']/i);
-      const rawUrl = srcMatch ? srcMatch[1] : value;
-      const url = decodeURIComponent(rawUrl);
-
-      let match = url.match(/!1d[\d.]+!2d([\-\d.]+)!3d([\-\d.]+)/);
-      if (match) return { lat: parseFloat(match[2]), lng: parseFloat(match[1]) };
-
-      match = url.match(/!2d([\-\d.]+)!3d([\-\d.]+)/);
-      if (match) return { lat: parseFloat(match[2]), lng: parseFloat(match[1]) };
-
-      match = url.match(/!3d([\-\d.]+)!4d([\-\d.]+)/);
-      if (match) return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
-
-      match = url.match(/@([\-\d.]+),([\-\d.]+)/);
-      if (match) return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
-
-      match = url.match(/center=([\-\d.]+),([\-\d.]+)/i);
-      if (match) return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
-
-      match = url.match(/ll=([\-\d.]+),([\-\d.]+)/i);
-      if (match) return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
-
-      match = url.match(/q=([\-\d.]+),([\-\d.]+)/i);
-      if (match) return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
-
-      match = value.match(/([+-]?\d+\.\d+)\s*,\s*([+-]?\d+\.\d+)/);
-      if (match) return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
-
-      return null;
-    }
-
-    function displayParsedCoords() {
-      const locationStr = document.getElementById('inp-location').value.trim();
-      const display = document.getElementById('coords-display');
-      if (!locationStr) {
-        display.style.display = 'none';
-        return;
-      }
-      const coords = parseLocationInput(locationStr);
-      if (coords) {
-        display.innerHTML = `Latitude: ${coords.lat}<br>Longitude: ${coords.lng}`;
-        display.style.display = 'block';
-      } else {
-        display.style.display = 'none';
-      }
-    }
-
     function saveSpot() {
       const name = document.getElementById('inp-name').value.trim();
       const desc = document.getElementById('inp-desc').value.trim();
       const tag = document.getElementById('inp-tag').value;
       const emojiInput = document.getElementById('inp-emoji').value.trim() || selectedEmoji;
-      const locationString = document.getElementById('inp-location').value.trim();
-      let lat = null;
-      let lng = null;
+      const latVal = document.getElementById('inp-lat').value.trim();
+      const lngVal = document.getElementById('inp-lng').value.trim();
+      let lat = latVal !== '' ? parseFloat(latVal) : null;
+      let lng = lngVal !== '' ? parseFloat(lngVal) : null;
 
       if (!name) { showToast('⚠️ Please enter a spot name'); return; }
 
-      if (locationString) {
-        const coords = parseLocationInput(locationString);
-        if (!coords) {
-          showToast('⚠️ Could not parse location. Paste a Google Maps iframe or lat,lng coordinates.');
-          return;
-        }
-        lat = coords.lat;
-        lng = coords.lng;
+      if ((latVal !== '' || lngVal !== '') && (isNaN(lat) || isNaN(lng))) {
+        showToast('⚠️ Invalid coordinates — enter valid numbers for lat and lng');
+        return;
       }
 
       if (editingId) {
@@ -2351,7 +2305,7 @@
         s.desc = desc;
         s.tag = tag;
         s.emoji = emojiInput;
-        if (locationString) {
+        if (latVal !== '' && lngVal !== '') {
           s.lat = lat;
           s.lng = lng;
         }
