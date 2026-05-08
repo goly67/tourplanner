@@ -1871,6 +1871,10 @@
           <option value="">— None —</option>
         </select>
       </div>
+      <div class="form-group">
+        <label>Announcement / Notes</label>
+        <textarea id="fee-announcement" placeholder="Important fee instructions, reminders, or notes for this fee..."></textarea>
+      </div>
       <div class="modal-footer">
         <button class="btn btn-outline" onclick="closeFeeModal()">Cancel</button>
         <button class="btn btn-primary" onclick="saveFeeEntry()">Save Fee</button>
@@ -1909,7 +1913,7 @@
         priorityOrder = JSON.parse(localStorage.getItem('sg_priority')) || spots.map(s => s.id);
         spots.forEach(s => { if (!priorityOrder.includes(s.id)) priorityOrder.push(s.id); });
         schedule = (JSON.parse(localStorage.getItem('sg_schedule')) || []).map(ev => ({ ...ev, status: ev.status || 'not_finished' }));
-        fees = (JSON.parse(localStorage.getItem('sg_fees')) || []).map(({ announcement, ...rest }) => rest);
+        fees = JSON.parse(localStorage.getItem('sg_fees')) || [];
       } catch (e) {
         spots = [];
         checked = {}; stars = {};
@@ -2583,6 +2587,7 @@
         const paidCount = payers.filter(p => p.paid).length;
         const pct = payers.length ? Math.round(paidCount / payers.length * 100) : 0;
         const catIcon = FEE_CAT_ICONS[f.category] || '📌';
+        const announcementHtml = f.announcement ? `<div class="fee-card-announcement">${f.announcement.replace(/\n/g,'<br>')}</div>` : '';
 
         const payerRows = payers.map(p => `
       <div class="payer-row${p.paid ? ' paid' : ''}" id="prow-${p.id}">
@@ -2617,6 +2622,7 @@
         <div class="fee-prog-bar-outer"><div class="fee-prog-bar-inner" style="width:${pct}%"></div></div>
         <div class="fee-prog-label"><span>${paidCount} of ${payers.length} paid</span><span>${pct}%</span></div>
       </div>
+      ${announcementHtml}
       <div class="payer-list">${payerRows || '<p style="font-size:13px;color:var(--muted)">No payers yet. Add one below.</p>'}</div>
       <div class="fee-add-payer">
         <input type="text" id="new-payer-${f.id}" placeholder="Payer name (e.g. Juan)" onkeydown="if(event.key==='Enter')addPayer('${f.id}')">
@@ -2639,12 +2645,14 @@
         document.getElementById('fee-amount').value = f.amount || 0;
         document.getElementById('fee-category').value = f.category || 'entrance';
         document.getElementById('fee-spot').value = f.spotId || '';
+        document.getElementById('fee-announcement').value = f.announcement || '';
       } else {
         document.getElementById('fee-modal-title').textContent = '＋ Add Fee Entry';
         document.getElementById('fee-name').value = '';
         document.getElementById('fee-amount').value = 0;
         document.getElementById('fee-category').value = 'entrance';
         document.getElementById('fee-spot').value = '';
+        document.getElementById('fee-announcement').value = '';
       }
       document.getElementById('fee-modal').classList.add('open');
     }
@@ -2658,7 +2666,8 @@
         name,
         amount: parseFloat(document.getElementById('fee-amount').value) || 0,
         category: document.getElementById('fee-category').value,
-        spotId: document.getElementById('fee-spot').value || null
+        spotId: document.getElementById('fee-spot').value || null,
+        announcement: document.getElementById('fee-announcement').value.trim()
       };
       if (editingFeeId) {
         const idx = fees.findIndex(x => x.id === editingFeeId);
