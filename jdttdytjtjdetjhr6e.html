@@ -1762,7 +1762,11 @@
         </select>
       </div>
       <div class="form-group">
-        <label>Pick an Emoji</label>
+        <label>Emoji</label>
+        <input type="text" id="inp-emoji" placeholder="Paste your emoji here" maxlength="4">
+      </div>
+      <div class="form-group">
+        <label>Pick a quick emoji</label>
         <div class="emoji-picker">
           <span class="emoji-opt selected" onclick="selectEmoji(this)">🏖️</span>
           <span class="emoji-opt" onclick="selectEmoji(this)">🌊</span>
@@ -1778,6 +1782,10 @@
           <span class="emoji-opt" onclick="selectEmoji(this)">🌺</span>
           <span class="emoji-opt" onclick="selectEmoji(this)">📸</span>
         </div>
+      </div>
+      <div class="form-group">
+        <label>Location</label>
+        <textarea id="inp-location" placeholder="Paste a Google Maps iframe or lat,lng coordinates"></textarea>
       </div>
       <div class="modal-footer">
         <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
@@ -1795,6 +1803,10 @@
       <div class="form-group">
         <label>Event Title</label>
         <input type="text" id="ev-title" placeholder="e.g. Visit Mabua Beach">
+      </div>
+      <div class="form-group">
+        <label>Emoji (optional)</label>
+        <input type="text" id="ev-emoji" placeholder="Paste your emoji here" maxlength="4">
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div class="form-group">
@@ -2222,15 +2234,25 @@
         document.getElementById('inp-name').value = s.name;
         document.getElementById('inp-desc').value = s.desc;
         document.getElementById('inp-tag').value = s.tag;
-        selectedEmoji = s.emoji;
+        selectedEmoji = s.emoji || '🏖️';
+        document.getElementById('inp-emoji').value = selectedEmoji;
+        if (s.lat && s.lng) {
+          document.getElementById('inp-location').value = `${s.lat}, ${s.lng}`;
+        } else {
+          document.getElementById('inp-location').value = '';
+        }
         document.querySelectorAll('.emoji-opt').forEach(e => {
-          if (e.textContent === s.emoji) { e.classList.add('selected'); }
+          e.classList.toggle('selected', e.textContent === selectedEmoji);
         });
       } else {
         document.getElementById('modal-title').textContent = '＋ Add New Spot';
         document.getElementById('inp-name').value = '';
         document.getElementById('inp-desc').value = '';
         document.getElementById('inp-tag').value = 'Nature';
+        selectedEmoji = '🏖️';
+        document.getElementById('inp-emoji').value = selectedEmoji;
+        document.getElementById('inp-location').value = '';
+        document.querySelectorAll('.emoji-opt').forEach(e => e.classList.toggle('selected', e.textContent === selectedEmoji));
       }
       document.getElementById('modal').classList.add('open');
     }
@@ -2242,19 +2264,57 @@
       document.querySelectorAll('.emoji-opt').forEach(e => e.classList.remove('selected'));
       el.classList.add('selected');
       selectedEmoji = el.textContent;
+      const emojiInput = document.getElementById('inp-emoji');
+      if (emojiInput) emojiInput.value = selectedEmoji;
+    }
+
+    function parseLocationInput(value) {
+      if (!value) return null;
+      const srcMatch = value.match(/src=["']([^"']+)["']/i);
+      const url = srcMatch ? srcMatch[1] : value;
+      let match = url.match(/!2d([\-\d.]+)!3d([\-\d.]+)/);
+      if (match) return { lat: parseFloat(match[2]), lng: parseFloat(match[1]) };
+      match = url.match(/@([\-\d.]+),([\-\d.]+)/);
+      if (match) return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+      match = value.match(/([+-]?\d+\.\d+)\s*,\s*([+-]?\d+\.\d+)/);
+      if (match) return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+      return null;
     }
 
     function saveSpot() {
       const name = document.getElementById('inp-name').value.trim();
       const desc = document.getElementById('inp-desc').value.trim();
       const tag = document.getElementById('inp-tag').value;
+      const emojiInput = document.getElementById('inp-emoji').value.trim() || selectedEmoji;
+      const locationString = document.getElementById('inp-location').value.trim();
+      let lat = null;
+      let lng = null;
+
       if (!name) { showToast('⚠️ Please enter a spot name'); return; }
+
+      if (locationString) {
+        const coords = parseLocationInput(locationString);
+        if (!coords) {
+          showToast('⚠️ Could not parse location. Paste a Google Maps iframe or lat,lng coordinates.');
+          return;
+        }
+        lat = coords.lat;
+        lng = coords.lng;
+      }
+
       if (editingId) {
         const s = spots.find(x => x.id === editingId);
-        s.name = name; s.desc = desc; s.tag = tag; s.emoji = selectedEmoji;
+        s.name = name;
+        s.desc = desc;
+        s.tag = tag;
+        s.emoji = emojiInput;
+        if (locationString) {
+          s.lat = lat;
+          s.lng = lng;
+        }
       } else {
         const id = 'c' + Date.now();
-        spots.push({ id, name, desc, tag, emoji: selectedEmoji, priority: spots.length + 1 });
+        spots.push({ id, name, desc, tag, emoji: emojiInput, lat, lng, priority: spots.length + 1 });
         priorityOrder.push(id);
       }
       saveState();
@@ -2402,10 +2462,11 @@
     function renderEventItem(ev) {
       const spot = spots.find(s => s.id === ev.spotId);
       const dur = ev.duration ? `${(ev.duration / 60).toFixed(1)} hours` : '';
+      const eventEmoji = ev.emoji || (spot ? spot.emoji : '');
       return `<div class="event-item type-${ev.type || 'other'}">
     <div class="event-time">${formatTime12Hour(ev.time) || ''}</div>
     <div class="event-body">
-      <div class="event-title">${ev.title}</div>
+      <div class="event-title">${eventEmoji ? `<span style="margin-right:8px">${eventEmoji}</span>` : ''}${ev.title}</div>
       <div class="event-meta">
         ${spot ? `${spot.emoji} ${spot.name} · ` : ''}${TYPE_LABELS[ev.type] || 'Other'}${dur ? ' · ' + dur : ''}
       </div>
@@ -2432,6 +2493,7 @@
       }
       el.innerHTML = upcoming.map(ev => {
         const spot = spots.find(s => s.id === ev.spotId);
+        const eventEmoji = ev.emoji || (spot ? spot.emoji : '');
         const d = new Date(ev.date + 'T00:00:00');
         const month = d.toLocaleDateString('en', { month: 'short' }).toUpperCase();
         const day = d.getDate();
@@ -2441,7 +2503,7 @@
         <div class="upcoming-day">${day}</div>
       </div>
       <div class="upcoming-info">
-        <div class="upcoming-title">${ev.title}</div>
+        <div class="upcoming-title">${eventEmoji ? `<span style="margin-right:8px">${eventEmoji}</span>` : ''}${ev.title}</div>
         <div class="upcoming-meta">${formatTime12Hour(ev.time)} · ${TYPE_LABELS[ev.type] || ''}${spot ? ' · ' + spot.emoji + ' ' + spot.name : ''}</div>
         ${getEventStatusBadge(ev.status || 'not_finished')}
         ${ev.notes ? `<div style="font-size:11.5px;color:var(--muted);margin-top:3px;font-style:italic">💬 ${ev.notes}</div>` : ''}
@@ -2468,6 +2530,7 @@
 
       el.innerHTML = finished.map(ev => {
         const spot = spots.find(s => s.id === ev.spotId);
+        const eventEmoji = ev.emoji || (spot ? spot.emoji : '');
         const d = new Date(ev.date + 'T00:00:00');
         const month = d.toLocaleDateString('en', { month: 'short' }).toUpperCase();
         const day = d.getDate();
@@ -2477,7 +2540,7 @@
         <div class="upcoming-day">${day}</div>
       </div>
       <div class="upcoming-info">
-        <div class="upcoming-title">${ev.title}</div>
+        <div class="upcoming-title">${eventEmoji ? `<span style="margin-right:8px">${eventEmoji}</span>` : ''}${ev.title}</div>
         <div class="upcoming-meta">${formatTime12Hour(ev.time)} · ${TYPE_LABELS[ev.type] || ''}${spot ? ' · ' + spot.emoji + ' ' + spot.name : ''}</div>
         ${getEventStatusBadge('finished')}
         ${ev.notes ? `<div style="font-size:11.5px;color:var(--muted);margin-top:3px;font-style:italic">💬 ${ev.notes}</div>` : ''}
@@ -2508,6 +2571,7 @@
         const ev = schedule.find(e => e.id === id);
         document.getElementById('event-modal-title').textContent = '✏️ Edit Event';
         document.getElementById('ev-title').value = ev.title;
+        document.getElementById('ev-emoji').value = ev.emoji || '';
         document.getElementById('ev-date').value = ev.date;
         document.getElementById('ev-time').value = ev.time;
         document.getElementById('ev-duration').value = ev.duration;
@@ -2518,6 +2582,7 @@
       } else {
         document.getElementById('event-modal-title').textContent = '＋ Add Event';
         document.getElementById('ev-title').value = '';
+        document.getElementById('ev-emoji').value = '';
         document.getElementById('ev-date').value = prefillDate || new Date().toISOString().slice(0, 10);
         document.getElementById('ev-time').value = '08:00';
         document.getElementById('ev-duration').value = '60';
@@ -2539,6 +2604,7 @@
       if (!date) { showToast('⚠️ Please pick a date'); return; }
       const ev = {
         title,
+        emoji: document.getElementById('ev-emoji').value.trim() || undefined,
         date,
         time,
         duration: parseInt(document.getElementById('ev-duration').value) || 60,
