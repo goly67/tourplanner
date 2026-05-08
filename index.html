@@ -1337,6 +1337,15 @@ const EVENT_STATUS_LABELS = {
   not_finished: '⌛ Not finished'
 };
 
+function formatTime12Hour(timeStr) {
+  if (!timeStr) return '';
+  const [hour, min] = timeStr.split(':');
+  let h = parseInt(hour);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  return `${h}:${min} ${ampm}`;
+}
+
 function getEventStatusBadge(status) {
   return status === 'finished'
     ? '<span class="event-status-badge status-finished">✅ Finished</span>'
@@ -1425,7 +1434,7 @@ function renderEventItem(ev) {
   const spot = spots.find(s=>s.id===ev.spotId);
   const dur = ev.duration ? `${(ev.duration / 60).toFixed(1)} hours` : '';
   return `<div class="event-item type-${ev.type||'other'}">
-    <div class="event-time">${ev.time||''}</div>
+    <div class="event-time">${formatTime12Hour(ev.time||'')}</div>
     <div class="event-body">
       <div class="event-title">${ev.title}</div>
       <div class="event-meta">
@@ -1460,7 +1469,7 @@ function renderUpcoming() {
       </div>
       <div class="upcoming-info">
         <div class="upcoming-title">${ev.title}</div>
-        <div class="upcoming-meta">${ev.time} · ${TYPE_LABELS[ev.type]||''}${spot?' · '+spot.emoji+' '+spot.name:''}</div>
+        <div class="upcoming-meta">${formatTime12Hour(ev.time)} · ${TYPE_LABELS[ev.type]||''}${spot?' · '+spot.emoji+' '+spot.name:''}</div>
         ${getEventStatusBadge(ev.status || 'not_finished')}
         ${ev.notes?`<div style="font-size:11.5px;color:var(--muted);margin-top:3px;font-style:italic">💬 ${ev.notes}</div>`:''}
       </div>
@@ -1493,7 +1502,7 @@ function renderFinishedEvents() {
       </div>
       <div class="upcoming-info">
         <div class="upcoming-title">${ev.title}</div>
-        <div class="upcoming-meta">${ev.time} · ${TYPE_LABELS[ev.type]||''}${spot?' · '+spot.emoji+' '+spot.name:''}</div>
+        <div class="upcoming-meta">${formatTime12Hour(ev.time)} · ${TYPE_LABELS[ev.type]||''}${spot?' · '+spot.emoji+' '+spot.name:''}</div>
         ${getEventStatusBadge('finished')}
         ${ev.notes?`<div style="font-size:11.5px;color:var(--muted);margin-top:3px;font-style:italic">💬 ${ev.notes}</div>`:''}
       </div>
