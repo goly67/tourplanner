@@ -1111,6 +1111,10 @@
       box-shadow: 0 0 0 2px var(--coral);
     }
 
+    .cal-cell.all-finished {
+      background: rgba(67, 198, 172, 0.15);
+    }
+
     .cal-cell.other-month .cal-date {
       color: #ccc;
     }
@@ -1172,6 +1176,10 @@
 
     .dot-other {
       background: var(--muted);
+    }
+
+    .dot-finished {
+      background: #43c6ac;
     }
 
     .cal-selected-day {
@@ -1656,7 +1664,7 @@
         <span class="progress-pct" id="progress-pct">0%</span>
       </div>
       <div class="toolbar">
-        <span class="toolbar-title">Tourist Spots</span>
+        <span class="toolbar-title">Tourist spots</span>
         <span class="filter-chip active" onclick="setFilter('all',this)">All</span>
         <span class="filter-chip" onclick="setFilter('visited',this)">✅ Visited</span>
         <span class="filter-chip" onclick="setFilter('unvisited',this)">🔲 To Visit</span>
@@ -2499,8 +2507,9 @@
         const isToday = today.getFullYear() === calYear && today.getMonth() === calMonth && today.getDate() === d;
         const isSelected = calSelectedDate === dateStr;
         const evs = evByDate[dateStr] || [];
-        const dots = evs.map(ev => `<span class="cal-dot ${TYPE_COLORS[ev.type] || 'dot-other'}"></span>`).join('');
-        html += `<div class="cal-cell${isToday ? ' today' : ''}${isSelected ? ' selected' : ''}" onclick="selectCalDate('${dateStr}')">
+        const allFinished = evs.length > 0 && evs.every(ev => ev.status === 'finished');
+        const dots = evs.map(ev => `<span class="cal-dot ${TYPE_COLORS[ev.type] || 'dot-other'}${ev.status === 'finished' ? ' dot-finished' : ''}"></span>`).join('');
+        html += `<div class="cal-cell${isToday ? ' today' : ''}${isSelected ? ' selected' : ''}${allFinished ? ' all-finished' : ''}" onclick="selectCalDate('${dateStr}')">
       <div class="cal-date">${d}</div>
       <div class="cal-dots">${dots}</div>
     </div>`;
@@ -2546,7 +2555,7 @@
       const spot = spots.find(s => s.id === ev.spotId);
       const dur = ev.duration ? `${(ev.duration / 60).toFixed(1)} hours` : '';
       const eventEmoji = ev.emoji || (spot ? spot.emoji : '');
-      return `<div class="event-item type-${ev.type || 'other'}">
+      return `<div class="event-item type-${ev.type || 'other'}${ev.status === 'finished' ? ' status-finished' : ''}">
     <div class="event-time">${formatTime12Hour(ev.time) || ''}</div>
     <div class="event-body">
       <div class="event-title">${eventEmoji ? `<span style="margin-right:8px">${eventEmoji}</span>` : ''}${ev.title}</div>
