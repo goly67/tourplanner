@@ -1905,13 +1905,23 @@
     let routeLines = [];
 
     function initMap() {
-      if (leafletMap) return;
-      leafletMap = L.map('leaflet-map', { zoomControl: true }).setView([9.7868, 125.4944], 13);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a> contributors',
-        maxZoom: 19
-      }).addTo(leafletMap);
-    }
+  if (leafletMap) return;
+  const surigaoBounds = L.latLngBounds(
+    L.latLng(9.65, 125.38),
+    L.latLng(9.92, 125.63)
+  );
+  leafletMap = L.map('leaflet-map', {
+    zoomControl: true,
+    maxBounds: surigaoBounds,
+    maxBoundsViscosity: 1.0,
+    minZoom: 11,
+    maxZoom: 18
+  }).setView([9.7868, 125.4944], 13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a> contributors',
+    maxZoom: 18
+  }).addTo(leafletMap);
+}
 
     function makeMarkerIcon(s, rank, isVisited) {
       const checkHtml = isVisited

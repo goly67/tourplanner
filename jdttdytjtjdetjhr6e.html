@@ -2107,13 +2107,23 @@
     let routeLines = [];
 
     function initMap() {
-      if (leafletMap) return;
-      leafletMap = L.map('leaflet-map', { zoomControl: true }).setView([9.7868, 125.4944], 13);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a> contributors',
-        maxZoom: 19
-      }).addTo(leafletMap);
-    }
+  if (leafletMap) return;
+  const surigaoBounds = L.latLngBounds(
+    L.latLng(9.65, 125.38),
+    L.latLng(9.92, 125.63)
+  );
+  leafletMap = L.map('leaflet-map', {
+    zoomControl: true,
+    maxBounds: surigaoBounds,
+    maxBoundsViscosity: 1.0,
+    minZoom: 11,
+    maxZoom: 18
+  }).setView([9.7868, 125.4944], 13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a> contributors',
+    maxZoom: 18
+  }).addTo(leafletMap);
+}
 
     function makeMarkerIcon(s, rank, isVisited) {
       const checkHtml = isVisited
@@ -2552,10 +2562,11 @@
     }
 
     function renderEventItem(ev) {
-      const spot = spots.find(s => s.id === ev.spotId);
-      const dur = ev.duration ? `${(ev.duration / 60).toFixed(1)} hours` : '';
-      const eventEmoji = ev.emoji || (spot ? spot.emoji : '');
-      return `<div class="event-item type-${ev.type || 'other'}${ev.status === 'finished' ? ' status-finished' : ''}">
+  const spot = spots.find(s => s.id === ev.spotId);
+  const dur = ev.duration ? `${(ev.duration / 60).toFixed(1)} hours` : '';
+  const eventEmoji = ev.emoji || (spot ? spot.emoji : '');
+  const isDone = ev.status === 'finished';
+  return `<div class="event-item type-${ev.type || 'other'}${isDone ? ' status-finished' : ''}">
     <div class="event-time">${formatTime12Hour(ev.time) || ''}</div>
     <div class="event-body">
       <div class="event-title">${eventEmoji ? `<span style="margin-right:8px">${eventEmoji}</span>` : ''}${ev.title}</div>
@@ -2564,12 +2575,27 @@
       </div>
       ${ev.notes ? `<div class="event-notes">💬 ${ev.notes}</div>` : ''}
       <div class="event-actions">
+        <button class="icon-btn" title="${isDone ? 'Mark Unfinished' : 'Mark as Done'}" onclick="toggleEventDone('${ev.id}')">${isDone ? '✅' : '⬜'}</button>
         <button class="icon-btn" title="Edit" onclick="openEventModal('${ev.id}')">✏️</button>
         <button class="icon-btn" title="Delete" onclick="deleteEvent('${ev.id}')">🗑</button>
       </div>
     </div>
   </div>`;
-    }
+}
+
+function toggleEventDone(evId) {
+  const ev = schedule.find(e => e.id === evId);
+  if (!ev) return;
+  ev.status = ev.status === 'finished' ? 'not_finished' : 'finished';
+  if (ev.spotId) {
+    const anyFinished = schedule.some(e => e.spotId === ev.spotId && e.status === 'finished');
+    checked[ev.spotId] = anyFinished;
+  }
+  saveState();
+  renderAll();
+  if (leafletMap) renderMap();
+  showToast(ev.status === 'finished' ? '✅ Done! Map pin updated.' : '🔲 Unmarked');
+}
 
     function renderUpcoming() {
       const today = new Date().toISOString().slice(0, 10);
