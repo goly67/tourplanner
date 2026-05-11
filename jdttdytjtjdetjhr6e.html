@@ -2696,7 +2696,7 @@
       if (!date) { showToast('⚠️ Please pick a date'); return; }
       const ev = {
         title,
-        emoji: document.getElementById('ev-emoji').value.trim() || undefined,
+        emoji: document.getElementById('ev-emoji').value.trim() || '',
         date,
         time,
         duration: parseInt(document.getElementById('ev-duration').value) || 60,
